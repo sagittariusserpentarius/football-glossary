@@ -1,7 +1,9 @@
 import { useState, useMemo } from "react";
+import { Settings } from "lucide-react";
 import { type Formation, type FormationCategory } from "../../types/formations";
 import SearchBar from "./SearchBar";
 import CategoryGroup from "./CategoryGroup";
+import SettingsPanel from "./SettingsPanel";
 
 interface SidebarProps {
   formations: Formation[];
@@ -20,6 +22,7 @@ export default function Sidebar({
   onSelectFormation,
 }: SidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
 
   const filteredFormations = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -33,11 +36,33 @@ export default function Sidebar({
 
   return (
     <div className="flex flex-col h-full bg-slate-900">
-      {/* Header */}
-      <div className="px-4 pt-5 pb-3">
-        <h1 className="text-white font-bold text-base">Football Glossary</h1>
-        <p className="text-slate-500 text-xs mt-0.5">Formations & Alignments</p>
+      {/* Header row: title + cog */}
+      <div className="flex items-start justify-between px-4 pt-5 pb-3">
+        <div>
+          <h1 className="text-white font-bold text-base">Football Glossary</h1>
+          <p className="text-slate-500 text-xs mt-0.5">
+            Formations & Alignments
+          </p>
+        </div>
+
+        {/* Settings cog toggle */}
+        <button
+          onClick={() => setShowSettings((s) => !s)}
+          aria-label="Settings"
+          className={`p-1.5 rounded-lg transition-colors duration-150 ${
+            showSettings
+              ? "bg-slate-700 text-emerald-400"
+              : "text-slate-500 hover:text-slate-300 hover:bg-slate-800"
+          }`}
+        >
+          <Settings size={17} />
+        </button>
       </div>
+
+      {/* Settings panel (conditionally rendered) */}
+      {showSettings && (
+        <SettingsPanel onClose={() => setShowSettings(false)} />
+      )}
 
       {/* Search */}
       <SearchBar value={searchQuery} onChange={setSearchQuery} />
