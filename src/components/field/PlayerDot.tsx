@@ -1,6 +1,5 @@
 import { memo } from "react";
 import { type RenderedPlayer } from "../../hooks/useFormationAnimation";
-import { cn } from "../../lib/utils";
 
 interface PlayerDotProps {
   player: RenderedPlayer;

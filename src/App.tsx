@@ -21,7 +21,7 @@ export default function App() {
         {/* Sidebar */}
         <div
           className={cn(
-            "flex-shrink-0 overflow-hidden",
+            "shrink-0 overflow-hidden",
             "transition-all duration-300 ease-in-out",
             isSidebarCollapsed ? "w-0" : "w-72"
           )}
@@ -38,7 +38,7 @@ export default function App() {
         {/* Collapse toggle strip */}
         <button
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          className="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors duration-150 px-1.5 py-4 flex items-center self-center flex-shrink-0"
+          className="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors duration-150 px-1.5 py-4 flex items-center self-center shrink-0"
           aria-label={isSidebarCollapsed ? "Open sidebar" : "Close sidebar"}
         >
           {isSidebarCollapsed ? (
