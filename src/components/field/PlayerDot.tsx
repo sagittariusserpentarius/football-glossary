@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { type RenderedPlayer } from "../../hooks/useFormationAnimation";
+import { type RenderedPlayer } from "../../types/formations";
 
 interface PlayerDotProps {
   player: RenderedPlayer;
@@ -32,10 +32,8 @@ const PlayerDot = memo(function PlayerDot({
         width: DOT_SIZE,
         height: DOT_SIZE,
         opacity: player.opacity,
-        // Clip if fully off-screen to avoid scroll issues
-        visibility: player.x < -0.1 || player.x > 1.1 ? "hidden" : "visible",
         backgroundColor: isOffensive ? "#059669" : "#dc2626", // emerald vs red
-        transition: "none", // ALL motion is driven by the hook, not CSS
+        transition: "none", // guard against accidental CSS transitions
       }}
     >
       <span className="text-white text-xs font-bold select-none drop-shadow">

@@ -22,3 +22,11 @@ export interface Formation {
   /** Player positions normalised to a 0-1 unit square */
   players: PlayerPosition[];
 }
+
+/**
+ * A PlayerPosition with an opacity field for rendering.
+ * Always 1 right now — this is where a future fade transition would vary it.
+ */
+export interface RenderedPlayer extends PlayerPosition {
+  opacity: number;
+}

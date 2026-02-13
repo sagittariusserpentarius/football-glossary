@@ -1,7 +1,5 @@
-import { useRef, useEffect, useState, useCallback } from "react";
-import { type Formation } from "../../types/formations";
-import { useFormationAnimation } from "../../hooks/useFormationAnimation";
-import { useSettings } from "../../context/SettingsContext";
+import { useRef, useEffect, useState, useCallback, useMemo } from "react";
+import { type Formation, type RenderedPlayer } from "../../types/formations";
 import PlayerDot from "./PlayerDot";
 
 interface FieldViewProps {
@@ -9,15 +7,16 @@ interface FieldViewProps {
 }
 
 /**
- * Renders the football-field background and all animated player dots.
+ * Renders the football-field background and all player dots.
  * Automatically sizes to its container via a ResizeObserver.
  */
 export default function FieldView({ formation }: FieldViewProps) {
-  const { settings } = useSettings();
-  const { renderedPlayers } = useFormationAnimation(
-    formation,
-    settings.animationsEnabled
-  );
+  // Derive the rendered player list directly from the formation.
+  // Opacity is always 1 for now — a future fade hook would slot in here.
+  const renderedPlayers: RenderedPlayer[] = useMemo(() => {
+    if (!formation) return [];
+    return formation.players.map((p) => ({ ...p, opacity: 1 }));
+  }, [formation]);
 
   // Measure container so we can convert normalised coords → pixels
   const containerRef = useRef<HTMLDivElement>(null);
@@ -45,7 +44,7 @@ export default function FieldView({ formation }: FieldViewProps) {
       <div
         ref={containerRef}
         className="relative flex-1 overflow-hidden rounded-xl mx-6 my-4 shadow-inner"
-        style={{ background: "#2d5a27" }} // grass green
+        style={{ background: "#2d5a27" }}
       >
         {/* Yard-line stripes for visual reference */}
         <FieldLines />
@@ -68,7 +67,7 @@ export default function FieldView({ formation }: FieldViewProps) {
           </span>
         </div>
 
-        {/* Player dots (absolutely positioned by the hook's output) */}
+        {/* Player dots (absolutely positioned) */}
         {renderedPlayers.map((p) => (
           <PlayerDot
             key={p.key}
@@ -103,7 +102,6 @@ export default function FieldView({ formation }: FieldViewProps) {
 
 // ── Decorative yard lines ──────────────────────────────────────────────────────
 function FieldLines() {
-  // Draw 5 evenly spaced vertical dashed lines across the field for visual depth
   const lines = [0.2, 0.4, 0.6, 0.8];
   return (
     <>
