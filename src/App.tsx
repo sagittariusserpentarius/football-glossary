@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useFormations } from "./hooks/useFormations";
+import { formations } from "./data/formations";
 import { SettingsProvider } from "./context/SettingsContext";
 import Sidebar from "./components/sidebar/Sidebar";
 import FieldView from "./components/field/FieldView";
 import { cn } from "./lib/utils";
 
 export default function App() {
-  const { formations, loading, error } = useFormations();
   const [selectedFormationId, setSelectedFormationId] = useState<string | null>(
     null
   );
@@ -15,22 +14,6 @@ export default function App() {
 
   const selectedFormation =
     formations.find((f) => f.id === selectedFormationId) ?? null;
-
-  if (loading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-slate-100">
-        <p className="text-slate-500 text-sm">Loading formations…</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-slate-100">
-        <p className="text-red-500 text-sm">Failed to load formations: {error}</p>
-      </div>
-    );
-  }
 
   return (
     <SettingsProvider>
