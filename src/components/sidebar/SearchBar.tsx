@@ -14,7 +14,7 @@ export default function SearchBar({ value, onChange }: SearchBarProps) {
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Search formations..."
+          placeholder="Search terms & formations..."
           className="bg-transparent text-white placeholder-slate-500 text-sm outline-none w-full"
         />
       </div>

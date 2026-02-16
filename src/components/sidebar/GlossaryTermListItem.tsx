@@ -1,20 +1,20 @@
-import type { Formation } from "../../types/formations";
+import type { GlossaryTerm } from "../../types/glossary";
 import { cn } from "../../lib/utils";
 
-interface TermListItemProps {
-  formation: Formation;
+interface GlossaryTermListItemProps {
+  term: GlossaryTerm;
   isSelected: boolean;
   onSelect: (id: string) => void;
 }
 
-export default function TermListItem({
-  formation,
+export default function GlossaryTermListItem({
+  term,
   isSelected,
   onSelect,
-}: TermListItemProps) {
+}: GlossaryTermListItemProps) {
   return (
     <button
-      onClick={() => onSelect(formation.id)}
+      onClick={() => onSelect(term.id)}
       className={cn(
         "w-full text-left px-3 py-1.5 rounded-lg text-sm transition-all duration-150",
         isSelected
@@ -22,7 +22,7 @@ export default function TermListItem({
           : "text-slate-300 hover:bg-slate-800 hover:text-white"
       )}
     >
-      {formation.name}
+      {term.term}
     </button>
   );
 }

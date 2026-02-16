@@ -1,18 +1,29 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import { type Formation, type RenderedPlayer } from "../../types/formations";
+import type { GlossaryTerm } from "../../types/glossary";
+import { createAutoLinkedText } from "../../lib/autoLink";
 import PlayerDot from "./PlayerDot";
 
 interface FieldViewProps {
   formation: Formation | null;
+  formations: Formation[];
+  glossaryTerms: GlossaryTerm[];
+  onSelectFormation: (id: string) => void;
+  onSelectTerm: (id: string) => void;
 }
 
 /**
  * Renders the football-field background and all player dots.
  * Automatically sizes to its container via a ResizeObserver.
  */
-export default function FieldView({ formation }: FieldViewProps) {
+export default function FieldView({
+  formation,
+  formations,
+  glossaryTerms,
+  onSelectFormation,
+  onSelectTerm,
+}: FieldViewProps) {
   // Derive the rendered player list directly from the formation.
-  // Opacity is always 1 for now — a future fade hook would slot in here.
   const renderedPlayers: RenderedPlayer[] = useMemo(() => {
     if (!formation) return [];
     return formation.players.map((p) => ({ ...p, opacity: 1 }));
@@ -37,6 +48,19 @@ export default function FieldView({ formation }: FieldViewProps) {
   }, [updateSize]);
 
   const isOffensive = formation?.category === "offensive";
+
+  // Create auto-linked description
+  const linkedDescription = useMemo(() => {
+    if (!formation) return null;
+    return createAutoLinkedText(
+      formation.description,
+      formations,
+      glossaryTerms,
+      onSelectFormation,
+      onSelectTerm,
+      formation.id
+    );
+  }, [formation, formations, glossaryTerms, onSelectFormation, onSelectTerm]);
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -92,7 +116,7 @@ export default function FieldView({ formation }: FieldViewProps) {
         <div className="px-6 pb-5">
           <h2 className="text-xl font-bold text-slate-800">{formation.name}</h2>
           <p className="text-slate-500 text-sm mt-1.5 leading-relaxed max-w-2xl">
-            {formation.description}
+            {linkedDescription}
           </p>
         </div>
       )}
