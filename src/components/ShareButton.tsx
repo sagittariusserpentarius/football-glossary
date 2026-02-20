@@ -15,21 +15,8 @@ export default function ShareButton({ className }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-    } catch {
-      // Fallback for older browsers / insecure contexts
-      const textArea = document.createElement("textarea");
-      textArea.value = window.location.href;
-      textArea.style.position = "fixed";
-      textArea.style.opacity = "0";
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textArea);
-      setCopied(true);
-    }
+    await navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
   }, []);
 
   // Reset the "copied" state after a short delay

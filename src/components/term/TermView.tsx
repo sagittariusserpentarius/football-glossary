@@ -1,10 +1,10 @@
 import type { GlossaryTerm } from "../../types/glossary";
 import type { Formation } from "../../types/formations";
 import { createAutoLinkedText } from "../../lib/autoLink";
-import { BookOpen } from "lucide-react";
+import ShareButton from "../ShareButton";
 
 interface TermViewProps {
-  term: GlossaryTerm | null;
+  term: GlossaryTerm;
   formations: Formation[];
   allTerms: GlossaryTerm[];
   onSelectFormation: (id: string) => void;
@@ -19,12 +19,13 @@ const CATEGORY_LABELS: Record<string, string> = {
   general: "General",
 };
 
+// Improved contrast: solid/semi-solid backgrounds with darker text
 const CATEGORY_COLORS: Record<string, string> = {
-  scoring: "bg-amber-500/20 text-amber-300",
-  positions: "bg-blue-500/20 text-blue-300",
-  plays: "bg-purple-500/20 text-purple-300",
-  rules: "bg-rose-500/20 text-rose-300",
-  general: "bg-slate-500/20 text-slate-300",
+  scoring: "bg-amber-100 text-amber-800 border border-amber-300",
+  positions: "bg-blue-100 text-blue-800 border border-blue-300",
+  plays: "bg-purple-100 text-purple-800 border border-purple-300",
+  rules: "bg-rose-100 text-rose-800 border border-rose-300",
+  general: "bg-slate-100 text-slate-700 border border-slate-300",
 };
 
 export default function TermView({
@@ -34,22 +35,6 @@ export default function TermView({
   onSelectFormation,
   onSelectTerm,
 }: TermViewProps) {
-  if (!term) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-slate-100">
-        <div className="text-center">
-          <BookOpen size={48} className="mx-auto text-slate-300 mb-4" />
-          <p className="text-slate-400 text-lg font-medium">
-            Select a term from the sidebar
-          </p>
-          <p className="text-slate-400 text-sm mt-1">
-            to see its definition
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   const linkedDefinition = createAutoLinkedText(
     term.definition,
     formations,
@@ -64,8 +49,8 @@ export default function TermView({
       {/* Main content area */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="max-w-2xl w-full">
-          {/* Category badge */}
-          <div className="mb-4">
+          {/* Header row: category badge + share button */}
+          <div className="flex items-center justify-between mb-4">
             <span
               className={`inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${
                 CATEGORY_COLORS[term.category] || CATEGORY_COLORS.general
@@ -73,6 +58,7 @@ export default function TermView({
             >
               {CATEGORY_LABELS[term.category] || term.category}
             </span>
+            <ShareButton />
           </div>
 
           {/* Term name */}
@@ -89,7 +75,8 @@ export default function TermView({
 
           {/* Hint about links */}
           <p className="text-slate-400 text-sm mt-4 text-center">
-            <span className="text-emerald-600">Highlighted terms</span> link to other glossary entries
+            <span className="text-emerald-600">Highlighted terms</span> link to
+            other glossary entries
           </p>
         </div>
       </div>

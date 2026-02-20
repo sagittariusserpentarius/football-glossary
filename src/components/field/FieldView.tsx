@@ -6,7 +6,7 @@ import PlayerDot from "./PlayerDot";
 import ShareButton from "../ShareButton";
 
 interface FieldViewProps {
-  formation: Formation | null;
+  formation: Formation;
   formations: Formation[];
   glossaryTerms: GlossaryTerm[];
   onSelectFormation: (id: string) => void;
@@ -26,7 +26,6 @@ export default function FieldView({
 }: FieldViewProps) {
   // Derive the rendered player list directly from the formation.
   const renderedPlayers: RenderedPlayer[] = useMemo(() => {
-    if (!formation) return [];
     return formation.players.map((p) => ({ ...p, opacity: 1 }));
   }, [formation]);
 
@@ -48,11 +47,10 @@ export default function FieldView({
     return () => obs.disconnect();
   }, [updateSize]);
 
-  const isOffensive = formation?.category === "offensive";
+  const isOffensive = formation.category === "offensive";
 
   // Create auto-linked description
   const linkedDescription = useMemo(() => {
-    if (!formation) return null;
     return createAutoLinkedText(
       formation.description,
       formations,
@@ -62,11 +60,6 @@ export default function FieldView({
       formation.id
     );
   }, [formation, formations, glossaryTerms, onSelectFormation, onSelectTerm]);
-
-  // If no formation is selected the App-level WelcomeScreen is shown instead,
-  // so this component can safely assume `formation` will be non-null when
-  // rendered.  We still guard for safety.
-  if (!formation) return null;
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -111,9 +104,7 @@ export default function FieldView({
       {/* ── Description panel below the field ──────────────────────────── */}
       <div className="px-6 pb-5">
         <div className="flex items-start justify-between gap-3">
-          <h2 className="text-xl font-bold text-slate-800">
-            {formation.name}
-          </h2>
+          <h2 className="text-xl font-bold text-slate-800">{formation.name}</h2>
           <ShareButton className="shrink-0 mt-0.5" />
         </div>
         <p className="text-slate-500 text-sm mt-1.5 leading-relaxed max-w-2xl">

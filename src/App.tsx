@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback } from "react";
+import { Routes, Route, Navigate, useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { formations } from "./data/formations";
 import { glossaryTerms } from "./data/terms";
@@ -9,120 +10,107 @@ import TermView from "./components/term/TermView";
 import WelcomeScreen from "./components/WelcomeScreen";
 import type { Selection } from "./types/glossary";
 import { cn } from "./lib/utils";
+import { useState } from "react";
 
 /**
- * Parses the current URL hash into a Selection.
- * Expected formats:  #formation/<id>   or   #term/<id>
+ * Wrapper component for the formation view that extracts the ID from URL params
  */
-function selectionFromHash(): Selection {
-  const hash = window.location.hash.replace(/^#/, "");
-  if (!hash) return null;
+function FormationPage({
+  onSelectFormation,
+  onSelectTerm,
+}: {
+  onSelectFormation: (id: string) => void;
+  onSelectTerm: (id: string) => void;
+}) {
+  const { id } = useParams<{ id: string }>();
+  const formation = formations.find((f) => f.id === id) ?? null;
 
-  const [type, ...rest] = hash.split("/");
-  const id = rest.join("/"); // in case an id ever contains "/"
+  // If formation not found, redirect to home
+  if (!formation) {
+    return <Navigate to="/" replace />;
+  }
 
-  if (type === "formation" && formations.some((f) => f.id === id)) {
-    return { type: "formation", id };
+  return (
+    <FieldView
+      formation={formation}
+      formations={formations}
+      glossaryTerms={glossaryTerms}
+      onSelectFormation={onSelectFormation}
+      onSelectTerm={onSelectTerm}
+    />
+  );
+}
+
+/**
+ * Wrapper component for the term view that extracts the ID from URL params
+ */
+function TermPage({
+  onSelectFormation,
+  onSelectTerm,
+}: {
+  onSelectFormation: (id: string) => void;
+  onSelectTerm: (id: string) => void;
+}) {
+  const { id } = useParams<{ id: string }>();
+  const term = glossaryTerms.find((t) => t.id === id) ?? null;
+
+  // If term not found, redirect to home
+  if (!term) {
+    return <Navigate to="/" replace />;
   }
-  if (type === "term" && glossaryTerms.some((t) => t.id === id)) {
-    return { type: "term", id };
+
+  return (
+    <TermView
+      term={term}
+      formations={formations}
+      allTerms={glossaryTerms}
+      onSelectFormation={onSelectFormation}
+      onSelectTerm={onSelectTerm}
+    />
+  );
+}
+
+/**
+ * Derives the current selection from URL params for the sidebar highlight
+ */
+function useSelectionFromPath(): Selection {
+  const path = window.location.hash.replace(/^#/, "");
+  
+  if (path.startsWith("/formation/")) {
+    const id = path.replace("/formation/", "");
+    if (formations.some((f) => f.id === id)) {
+      return { type: "formation", id };
+    }
   }
+  
+  if (path.startsWith("/term/")) {
+    const id = path.replace("/term/", "");
+    if (glossaryTerms.some((t) => t.id === id)) {
+      return { type: "term", id };
+    }
+  }
+  
   return null;
 }
 
-/**
- * Converts a Selection to the hash string (without the leading #).
- */
-function hashFromSelection(sel: Selection): string {
-  if (!sel) return "";
-  return `${sel.type}/${sel.id}`;
-}
-
 export default function App() {
-  const [selection, setSelection] = useState<Selection>(() =>
-    selectionFromHash()
-  );
+  const navigate = useNavigate();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const selection = useSelectionFromPath();
 
-  // ── Keep the URL hash in sync with selection ──────────────────────
-  useEffect(() => {
-    const desired = hashFromSelection(selection);
-    const current = window.location.hash.replace(/^#/, "");
+  const handleSelectFormation = useCallback(
+    (id: string) => {
+      navigate(`/formation/${id}`);
+    },
+    [navigate]
+  );
 
-    if (desired !== current) {
-      // pushState so the browser back/forward buttons work
-      if (desired) {
-        window.history.pushState(null, "", `#${desired}`);
-      } else {
-        // Clear the hash without leaving a trailing #
-        window.history.pushState(
-          null,
-          "",
-          window.location.pathname + window.location.search
-        );
-      }
-    }
-  }, [selection]);
-
-  // ── Listen for browser back / forward navigation ──────────────────
-  useEffect(() => {
-    const onHashChange = () => {
-      setSelection(selectionFromHash());
-    };
-    window.addEventListener("hashchange", onHashChange);
-    window.addEventListener("popstate", onHashChange);
-    return () => {
-      window.removeEventListener("hashchange", onHashChange);
-      window.removeEventListener("popstate", onHashChange);
-    };
-  }, []);
-
-  const selectedFormation =
-    selection?.type === "formation"
-      ? formations.find((f) => f.id === selection.id) ?? null
-      : null;
-
-  const selectedTerm =
-    selection?.type === "term"
-      ? glossaryTerms.find((t) => t.id === selection.id) ?? null
-      : null;
-
-  const handleSelectFormation = useCallback((id: string) => {
-    setSelection({ type: "formation", id });
-  }, []);
-
-  const handleSelectTerm = useCallback((id: string) => {
-    setSelection({ type: "term", id });
-  }, []);
-
-  // ── Determine which main-panel content to show ────────────────────
-  const renderMainContent = () => {
-    if (!selection) {
-      return <WelcomeScreen />;
-    }
-
-    if (selection.type === "term") {
-      return (
-        <TermView
-          term={selectedTerm}
-          formations={formations}
-          allTerms={glossaryTerms}
-          onSelectFormation={handleSelectFormation}
-          onSelectTerm={handleSelectTerm}
-        />
-      );
-    }
-
-    return (
-      <FieldView
-        formation={selectedFormation}
-        formations={formations}
-        glossaryTerms={glossaryTerms}
-        onSelectFormation={handleSelectFormation}
-        onSelectTerm={handleSelectTerm}
-      />
-    );
-  };
+  const handleSelectTerm = useCallback(
+    (id: string) => {
+      navigate(`/term/${id}`);
+    },
+    [navigate]
+  );
 
   return (
     <SettingsProvider>
@@ -161,7 +149,29 @@ export default function App() {
 
         {/* Main content */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {renderMainContent()}
+          <Routes>
+            <Route path="/" element={<WelcomeScreen />} />
+            <Route
+              path="/formation/:id"
+              element={
+                <FormationPage
+                  onSelectFormation={handleSelectFormation}
+                  onSelectTerm={handleSelectTerm}
+                />
+              }
+            />
+            <Route
+              path="/term/:id"
+              element={
+                <TermPage
+                  onSelectFormation={handleSelectFormation}
+                  onSelectTerm={handleSelectTerm}
+                />
+              }
+            />
+            {/* Catch-all redirect to home */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </div>
       </div>
     </SettingsProvider>
