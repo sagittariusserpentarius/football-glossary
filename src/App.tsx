@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { formations } from "./data/formations";
 import { glossaryTerms } from "./data/terms";
@@ -6,12 +6,76 @@ import { SettingsProvider } from "./context/SettingsContext";
 import Sidebar from "./components/sidebar/Sidebar";
 import FieldView from "./components/field/FieldView";
 import TermView from "./components/term/TermView";
+import WelcomeScreen from "./components/WelcomeScreen";
 import type { Selection } from "./types/glossary";
 import { cn } from "./lib/utils";
 
+/**
+ * Parses the current URL hash into a Selection.
+ * Expected formats:  #formation/<id>   or   #term/<id>
+ */
+function selectionFromHash(): Selection {
+  const hash = window.location.hash.replace(/^#/, "");
+  if (!hash) return null;
+
+  const [type, ...rest] = hash.split("/");
+  const id = rest.join("/"); // in case an id ever contains "/"
+
+  if (type === "formation" && formations.some((f) => f.id === id)) {
+    return { type: "formation", id };
+  }
+  if (type === "term" && glossaryTerms.some((t) => t.id === id)) {
+    return { type: "term", id };
+  }
+  return null;
+}
+
+/**
+ * Converts a Selection to the hash string (without the leading #).
+ */
+function hashFromSelection(sel: Selection): string {
+  if (!sel) return "";
+  return `${sel.type}/${sel.id}`;
+}
+
 export default function App() {
-  const [selection, setSelection] = useState<Selection>(null);
+  const [selection, setSelection] = useState<Selection>(() =>
+    selectionFromHash()
+  );
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // ── Keep the URL hash in sync with selection ──────────────────────
+  useEffect(() => {
+    const desired = hashFromSelection(selection);
+    const current = window.location.hash.replace(/^#/, "");
+
+    if (desired !== current) {
+      // pushState so the browser back/forward buttons work
+      if (desired) {
+        window.history.pushState(null, "", `#${desired}`);
+      } else {
+        // Clear the hash without leaving a trailing #
+        window.history.pushState(
+          null,
+          "",
+          window.location.pathname + window.location.search
+        );
+      }
+    }
+  }, [selection]);
+
+  // ── Listen for browser back / forward navigation ──────────────────
+  useEffect(() => {
+    const onHashChange = () => {
+      setSelection(selectionFromHash());
+    };
+    window.addEventListener("hashchange", onHashChange);
+    window.addEventListener("popstate", onHashChange);
+    return () => {
+      window.removeEventListener("hashchange", onHashChange);
+      window.removeEventListener("popstate", onHashChange);
+    };
+  }, []);
 
   const selectedFormation =
     selection?.type === "formation"
@@ -23,12 +87,41 @@ export default function App() {
       ? glossaryTerms.find((t) => t.id === selection.id) ?? null
       : null;
 
-  const handleSelectFormation = (id: string) => {
+  const handleSelectFormation = useCallback((id: string) => {
     setSelection({ type: "formation", id });
-  };
+  }, []);
 
-  const handleSelectTerm = (id: string) => {
+  const handleSelectTerm = useCallback((id: string) => {
     setSelection({ type: "term", id });
+  }, []);
+
+  // ── Determine which main-panel content to show ────────────────────
+  const renderMainContent = () => {
+    if (!selection) {
+      return <WelcomeScreen />;
+    }
+
+    if (selection.type === "term") {
+      return (
+        <TermView
+          term={selectedTerm}
+          formations={formations}
+          allTerms={glossaryTerms}
+          onSelectFormation={handleSelectFormation}
+          onSelectTerm={handleSelectTerm}
+        />
+      );
+    }
+
+    return (
+      <FieldView
+        formation={selectedFormation}
+        formations={formations}
+        glossaryTerms={glossaryTerms}
+        onSelectFormation={handleSelectFormation}
+        onSelectTerm={handleSelectTerm}
+      />
+    );
   };
 
   return (
@@ -66,25 +159,9 @@ export default function App() {
           )}
         </button>
 
-        {/* Main content: field view for formations, term view for glossary terms */}
+        {/* Main content */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {selection?.type === "term" ? (
-            <TermView
-              term={selectedTerm}
-              formations={formations}
-              allTerms={glossaryTerms}
-              onSelectFormation={handleSelectFormation}
-              onSelectTerm={handleSelectTerm}
-            />
-          ) : (
-            <FieldView
-              formation={selectedFormation}
-              formations={formations}
-              glossaryTerms={glossaryTerms}
-              onSelectFormation={handleSelectFormation}
-              onSelectTerm={handleSelectTerm}
-            />
-          )}
+          {renderMainContent()}
         </div>
       </div>
     </SettingsProvider>

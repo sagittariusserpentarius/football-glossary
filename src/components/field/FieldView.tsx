@@ -3,6 +3,7 @@ import { type Formation, type RenderedPlayer } from "../../types/formations";
 import type { GlossaryTerm } from "../../types/glossary";
 import { createAutoLinkedText } from "../../lib/autoLink";
 import PlayerDot from "./PlayerDot";
+import ShareButton from "../ShareButton";
 
 interface FieldViewProps {
   formation: Formation | null;
@@ -62,6 +63,11 @@ export default function FieldView({
     );
   }, [formation, formations, glossaryTerms, onSelectFormation, onSelectTerm]);
 
+  // If no formation is selected the App-level WelcomeScreen is shown instead,
+  // so this component can safely assume `formation` will be non-null when
+  // rendered.  We still guard for safety.
+  if (!formation) return null;
+
   return (
     <div className="flex flex-col h-full w-full">
       {/* ── Field container ────────────────────────────────────────────── */}
@@ -100,26 +106,20 @@ export default function FieldView({
             containerSize={containerSize}
           />
         ))}
-
-        {/* Empty-state overlay */}
-        {!formation && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-xl">
-            <p className="text-white/70 text-lg font-medium">
-              Select a formation from the sidebar
-            </p>
-          </div>
-        )}
       </div>
 
       {/* ── Description panel below the field ──────────────────────────── */}
-      {formation && (
-        <div className="px-6 pb-5">
-          <h2 className="text-xl font-bold text-slate-800">{formation.name}</h2>
-          <p className="text-slate-500 text-sm mt-1.5 leading-relaxed max-w-2xl">
-            {linkedDescription}
-          </p>
+      <div className="px-6 pb-5">
+        <div className="flex items-start justify-between gap-3">
+          <h2 className="text-xl font-bold text-slate-800">
+            {formation.name}
+          </h2>
+          <ShareButton className="shrink-0 mt-0.5" />
         </div>
-      )}
+        <p className="text-slate-500 text-sm mt-1.5 leading-relaxed max-w-2xl">
+          {linkedDescription}
+        </p>
+      </div>
     </div>
   );
 }
