@@ -3,8 +3,7 @@ import { Settings } from "lucide-react";
 import type { Formation, FormationCategory } from "../../types/formations";
 import type { GlossaryTerm, TermCategory, Selection } from "../../types/glossary";
 import SearchBar from "./SearchBar";
-import CategoryGroup from "./CategoryGroup";
-import GlossaryTermGroup from "./GlossaryTermGroup";
+import CollapsibleGroup, { type SidebarItem } from "./CollapsibleGroup";
 import SettingsPanel from "./SettingsPanel";
 
 interface SidebarProps {
@@ -27,6 +26,16 @@ const TERM_CATEGORIES: { key: TermCategory; title: string }[] = [
   { key: "rules", title: "Rules & Field" },
   { key: "general", title: "General" },
 ];
+
+/** Converts a {@link Formation} to the generic shape used by sidebar lists. */
+function formationToSidebarItem(f: Formation): SidebarItem {
+  return { id: f.id, label: f.name };
+}
+
+/** Converts a {@link GlossaryTerm} to the generic shape used by sidebar lists. */
+function termToSidebarItem(t: GlossaryTerm): SidebarItem {
+  return { id: t.id, label: t.term };
+}
 
 export default function Sidebar({
   formations,
@@ -112,15 +121,17 @@ export default function Sidebar({
               </h2>
             </div>
             {FORMATION_CATEGORIES.map(({ key, title }) => {
-              const items = filteredFormations.filter((f) => f.category === key);
+              const items = filteredFormations
+                .filter((f) => f.category === key)
+                .map(formationToSidebarItem);
               if (items.length === 0) return null;
               return (
-                <CategoryGroup
+                <CollapsibleGroup
                   key={key}
                   title={title}
-                  formations={items}
-                  selectedFormationId={selectedFormationId}
-                  onSelectFormation={onSelectFormation}
+                  items={items}
+                  selectedId={selectedFormationId}
+                  onSelect={onSelectFormation}
                 />
               );
             })}
@@ -141,15 +152,17 @@ export default function Sidebar({
               </h2>
             </div>
             {TERM_CATEGORIES.map(({ key, title }) => {
-              const items = filteredTerms.filter((t) => t.category === key);
+              const items = filteredTerms
+                .filter((t) => t.category === key)
+                .map(termToSidebarItem);
               if (items.length === 0) return null;
               return (
-                <GlossaryTermGroup
+                <CollapsibleGroup
                   key={key}
                   title={title}
-                  terms={items}
-                  selectedTermId={selectedTermId}
-                  onSelectTerm={onSelectTerm}
+                  items={items}
+                  selectedId={selectedTermId}
+                  onSelect={onSelectTerm}
                 />
               );
             })}

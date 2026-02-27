@@ -1,22 +1,36 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { type Formation } from "../../types/formations";
-import TermListItem from "./TermListItem";
+import SidebarListItem from "./SidebarListItem";
 import { cn } from "../../lib/utils";
 
-interface CategoryGroupProps {
-  title: string;
-  formations: Formation[];
-  selectedFormationId: string | null;
-  onSelectFormation: (id: string) => void;
+/** Minimal item shape required by the sidebar list. */
+export interface SidebarItem {
+  id: string;
+  label: string;
 }
 
-export default function CategoryGroup({
+interface CollapsibleGroupProps {
+  /** Heading shown above the collapsible list. */
+  title: string;
+  /** Items to render inside the group. */
+  items: SidebarItem[];
+  /** The `id` of the currently-selected item, or `null`. */
+  selectedId: string | null;
+  /** Called with an item's `id` when it is clicked. */
+  onSelect: (id: string) => void;
+}
+
+/**
+ * A collapsible sidebar section with a titled header and a list of
+ * selectable items. Used for both formation categories and glossary
+ * term categories.
+ */
+export default function CollapsibleGroup({
   title,
-  formations,
-  selectedFormationId,
-  onSelectFormation,
-}: CategoryGroupProps) {
+  items,
+  selectedId,
+  onSelect,
+}: CollapsibleGroupProps) {
   const [isOpen, setIsOpen] = useState(true);
 
   return (
@@ -43,16 +57,17 @@ export default function CategoryGroup({
       <div
         className={cn(
           "overflow-hidden transition-all duration-300 ease-in-out",
-          isOpen ? "max-h-125 opacity-100" : "max-h-0 opacity-0"
+          isOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
         )}
       >
         <div className="px-3 space-y-0.5 pb-1">
-          {formations.map((formation) => (
-            <TermListItem
-              key={formation.id}
-              formation={formation}
-              isSelected={selectedFormationId === formation.id}
-              onSelect={onSelectFormation}
+          {items.map((item) => (
+            <SidebarListItem
+              key={item.id}
+              id={item.id}
+              label={item.label}
+              isSelected={selectedId === item.id}
+              onSelect={onSelect}
             />
           ))}
         </div>

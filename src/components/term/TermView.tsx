@@ -58,7 +58,7 @@ export default function TermView({
             >
               {CATEGORY_LABELS[term.category] || term.category}
             </span>
-            <ShareButton />
+            <ShareButton key={term.id} />
           </div>
 
           {/* Term name */}

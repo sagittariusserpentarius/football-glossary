@@ -105,7 +105,7 @@ export default function FieldView({
       <div className="px-6 pb-5">
         <div className="flex items-start justify-between gap-3">
           <h2 className="text-xl font-bold text-slate-800">{formation.name}</h2>
-          <ShareButton className="shrink-0 mt-0.5" />
+          <ShareButton key={formation.id} className="shrink-0 mt-0.5" />
         </div>
         <p className="text-slate-500 text-sm mt-1.5 leading-relaxed max-w-2xl">
           {linkedDescription}
