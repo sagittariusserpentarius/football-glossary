@@ -4,16 +4,18 @@ export interface PlayerPosition {
   /** Unique key within a formation, e.g. "qb", "wr1" */
   key: string;
   /**
-   * Stable slot index (0–10) shared across formations of the same category.
+   * Stable slot index shared across formations of the same category.
    * Used to build React keys so DOM nodes persist across same-unit switches.
    */
   slot: number;
   /** Display label on the player dot */
   label: string;
+  /** Full position name shown on hover */
+  positionName: string;
   /**
    * Normalised position on the field.
    * x: 0 (left/backfield) → 1 (right/line of scrimmage and beyond)
-   * y: 0 (bottom/sideline) → 1 (top/opposite sideline)
+   * y: 0 (top/sideline) → 1 (bottom/opposite sideline)
    */
   x: number;
   y: number;

@@ -16,10 +16,9 @@ interface FieldViewProps {
 /**
  * Renders the football-field background and all player dots.
  *
- * Animation relies entirely on React's reconciler + CSS transitions:
- * each dot's React key is `{category}-slot-{N}`. Same-unit switches
- * keep keys stable → DOM nodes persist → CSS transitions fire.
- * Cross-unit switches change the key prefix → full remount → snap.
+ * Each dot's React key is `{category}-slot-{N}`. Same-unit switches
+ * keep keys stable (DOM persists → CSS transitions fire). Cross-unit
+ * switches mismatch every key (full remount → snap).
  */
 export default function FieldView({
   formation,
@@ -29,7 +28,14 @@ export default function FieldView({
   onSelectTerm,
 }: FieldViewProps) {
   const renderedPlayers: RenderedPlayer[] = useMemo(() => {
-    return formation.players.map((p) => ({ ...p, opacity: 1 }));
+    return formation.players
+      .map((p) => ({ ...p, opacity: 1 }))
+      // Sort by slot so the React children array is always in the same
+      // order regardless of how the JSON is authored. Without this,
+      // React may need to reorder DOM nodes when switching formations
+      // whose JSON arrays list the same slots in different positions,
+      // and DOM reordering resets CSS transitions (causing a snap).
+      .sort((a, b) => a.slot - b.slot);
   }, [formation]);
 
   const linkedDescription = useMemo(() => {
