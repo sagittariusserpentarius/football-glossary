@@ -17,6 +17,7 @@ interface SidebarProps {
 const FORMATION_CATEGORIES: { key: FormationCategory; title: string }[] = [
   { key: "offensive", title: "Offensive" },
   { key: "defensive", title: "Defensive" },
+  { key: "special-teams", title: "Special Teams" },
 ];
 
 const TERM_CATEGORIES: { key: TermCategory; title: string }[] = [
@@ -27,12 +28,10 @@ const TERM_CATEGORIES: { key: TermCategory; title: string }[] = [
   { key: "general", title: "General" },
 ];
 
-/** Converts a {@link Formation} to the generic shape used by sidebar lists. */
 function formationToSidebarItem(f: Formation): SidebarItem {
   return { id: f.id, label: f.name };
 }
 
-/** Converts a {@link GlossaryTerm} to the generic shape used by sidebar lists. */
 function termToSidebarItem(t: GlossaryTerm): SidebarItem {
   return { id: t.id, label: t.term };
 }
@@ -76,7 +75,7 @@ export default function Sidebar({
 
   return (
     <div className="flex flex-col h-full bg-slate-900">
-      {/* Header row: title + cog */}
+      {/* Header row */}
       <div className="flex items-start justify-between px-4 pt-5 pb-3">
         <div>
           <h1 className="text-white font-bold text-base">Football Glossary</h1>
@@ -85,7 +84,6 @@ export default function Sidebar({
           </p>
         </div>
 
-        {/* Settings cog toggle */}
         <button
           onClick={() => setShowSettings((s) => !s)}
           aria-label="Settings"
@@ -99,20 +97,15 @@ export default function Sidebar({
         </button>
       </div>
 
-      {/* Settings panel (conditionally rendered) */}
       {showSettings && (
         <SettingsPanel onClose={() => setShowSettings(false)} />
       )}
 
-      {/* Search */}
       <SearchBar value={searchQuery} onChange={setSearchQuery} />
 
-      {/* Divider */}
       <div className="border-t border-slate-700 mx-3 mb-1" />
 
-      {/* Scrollable category list */}
       <div className="flex-1 overflow-y-auto py-1">
-        {/* Formations Section */}
         {hasFormationResults && (
           <>
             <div className="px-4 py-2">
@@ -138,12 +131,10 @@ export default function Sidebar({
           </>
         )}
 
-        {/* Divider between sections */}
         {hasFormationResults && hasTermResults && (
           <div className="border-t border-slate-700 mx-3 my-2" />
         )}
 
-        {/* Glossary Terms Section */}
         {hasTermResults && (
           <>
             <div className="px-4 py-2">

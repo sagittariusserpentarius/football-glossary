@@ -1,8 +1,13 @@
-export type FormationCategory = "offensive" | "defensive";
+export type FormationCategory = "offensive" | "defensive" | "special-teams";
 
 export interface PlayerPosition {
   /** Unique key within a formation, e.g. "qb", "wr1" */
   key: string;
+  /**
+   * Stable slot index (0–10) shared across formations of the same category.
+   * Used to build React keys so DOM nodes persist across same-unit switches.
+   */
+  slot: number;
   /** Display label on the player dot */
   label: string;
   /**
@@ -23,10 +28,6 @@ export interface Formation {
   players: PlayerPosition[];
 }
 
-/**
- * A PlayerPosition with an opacity field for rendering.
- * Always 1 right now — this is where a future fade transition would vary it.
- */
 export interface RenderedPlayer extends PlayerPosition {
   opacity: number;
 }
