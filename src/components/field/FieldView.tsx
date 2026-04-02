@@ -19,13 +19,9 @@ interface FieldViewProps {
 }
 
 /**
- * Renders the football-field background and all player dots.
- *
- * Each dot's React key is `{category}-slot-{N}`. Slot values are
- * reassigned at render time by matching against the previously
- * rendered formation (key > label > distance), so same-unit switches
- * animate the semantically correct pairs. Cross-unit switches still
- * mismatch every key via the category prefix (full remount → snap).
+ * Renders the field and player dots. Keys are `{category}-slot-{N}`;
+ * slot values are reassigned per-render by matching against the
+ * previous formation so same-unit switches animate the right pairs.
  */
 export default function FieldView({
   formation,
@@ -34,15 +30,12 @@ export default function FieldView({
   onSelectFormation,
   onSelectTerm,
 }: FieldViewProps) {
-  // Previously rendered players (with their *assigned* slots), so
-  // assignments chain correctly across A → B → C.
+  // Holds assigned slots, not author slots — lets A→B→C chain correctly.
   const prevPlayersRef = useRef<RenderedPlayer[] | null>(null);
   const prevCategoryRef = useRef<FormationCategory | null>(null);
 
   const renderedPlayers: RenderedPlayer[] = useMemo(() => {
-    // Discard prev on category change — the category prefix in the key
-    // already forces a remount, so there's no DOM continuity to preserve,
-    // and matching offense ↔ defense is meaningless.
+    // Cross-category = full remount anyway; don't match against it.
     const prev =
       prevCategoryRef.current === formation.category
         ? prevPlayersRef.current
@@ -50,19 +43,10 @@ export default function FieldView({
 
     return assignStableSlots(prev, formation.players)
       .map((p) => ({ ...p, opacity: 1 }))
-      // Sort by (reassigned) slot so the React children array stays in a
-      // stable order. Without this, React may reorder DOM nodes when the
-      // same slots appear at different array indices across renders, and
-      // DOM reordering resets CSS transitions (causing a snap).
       .sort((a, b) => a.slot - b.slot);
-    // Refs are intentionally read but not listed as deps — they're
-    // snapshots of the previous commit, not reactive inputs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formation]);
 
-  // Record this render's result as the baseline for the next transition.
-  // Writing in an effect (not in the memo) keeps render pure and
-  // strict-mode safe.
   useEffect(() => {
     prevPlayersRef.current = renderedPlayers;
     prevCategoryRef.current = formation.category;
@@ -81,7 +65,6 @@ export default function FieldView({
 
   return (
     <div className="flex flex-col h-full w-full">
-      {/* Field container */}
       <div
         className="relative flex-1 overflow-hidden rounded-xl mx-6 my-4 shadow-inner"
         style={{ background: "#2d5a27" }}
@@ -98,7 +81,6 @@ export default function FieldView({
         ))}
       </div>
 
-      {/* Description panel */}
       <div className="px-6 pb-5">
         <div className="flex items-start justify-between gap-3">
           <h2 className="text-xl font-bold text-slate-800">
@@ -113,8 +95,6 @@ export default function FieldView({
     </div>
   );
 }
-
-// ── Decorative sub-components ──────────────────────────────────────────
 
 function FieldLines() {
   const lines = [0.2, 0.4, 0.6, 0.8];
