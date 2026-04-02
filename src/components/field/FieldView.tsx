@@ -1,7 +1,12 @@
-import { useMemo } from "react";
-import type { Formation, RenderedPlayer } from "../../types/formations";
+import { useMemo, useRef, useEffect } from "react";
+import type {
+  Formation,
+  FormationCategory,
+  RenderedPlayer,
+} from "../../types/formations";
 import type { GlossaryTerm } from "../../types/glossary";
 import { createAutoLinkedText } from "../../lib/autoLink";
+import { assignStableSlots } from "../../lib/assignStableSlots";
 import PlayerDot from "./PlayerDot";
 import ShareButton from "../ShareButton";
 
@@ -16,9 +21,11 @@ interface FieldViewProps {
 /**
  * Renders the football-field background and all player dots.
  *
- * Each dot's React key is `{category}-slot-{N}`. Same-unit switches
- * keep keys stable (DOM persists → CSS transitions fire). Cross-unit
- * switches mismatch every key (full remount → snap).
+ * Each dot's React key is `{category}-slot-{N}`. Slot values are
+ * reassigned at render time by matching against the previously
+ * rendered formation (key > label > distance), so same-unit switches
+ * animate the semantically correct pairs. Cross-unit switches still
+ * mismatch every key via the category prefix (full remount → snap).
  */
 export default function FieldView({
   formation,
@@ -27,16 +34,39 @@ export default function FieldView({
   onSelectFormation,
   onSelectTerm,
 }: FieldViewProps) {
+  // Previously rendered players (with their *assigned* slots), so
+  // assignments chain correctly across A → B → C.
+  const prevPlayersRef = useRef<RenderedPlayer[] | null>(null);
+  const prevCategoryRef = useRef<FormationCategory | null>(null);
+
   const renderedPlayers: RenderedPlayer[] = useMemo(() => {
-    return formation.players
+    // Discard prev on category change — the category prefix in the key
+    // already forces a remount, so there's no DOM continuity to preserve,
+    // and matching offense ↔ defense is meaningless.
+    const prev =
+      prevCategoryRef.current === formation.category
+        ? prevPlayersRef.current
+        : null;
+
+    return assignStableSlots(prev, formation.players)
       .map((p) => ({ ...p, opacity: 1 }))
-      // Sort by slot so the React children array is always in the same
-      // order regardless of how the JSON is authored. Without this,
-      // React may need to reorder DOM nodes when switching formations
-      // whose JSON arrays list the same slots in different positions,
-      // and DOM reordering resets CSS transitions (causing a snap).
+      // Sort by (reassigned) slot so the React children array stays in a
+      // stable order. Without this, React may reorder DOM nodes when the
+      // same slots appear at different array indices across renders, and
+      // DOM reordering resets CSS transitions (causing a snap).
       .sort((a, b) => a.slot - b.slot);
+    // Refs are intentionally read but not listed as deps — they're
+    // snapshots of the previous commit, not reactive inputs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formation]);
+
+  // Record this render's result as the baseline for the next transition.
+  // Writing in an effect (not in the memo) keeps render pure and
+  // strict-mode safe.
+  useEffect(() => {
+    prevPlayersRef.current = renderedPlayers;
+    prevCategoryRef.current = formation.category;
+  }, [renderedPlayers, formation.category]);
 
   const linkedDescription = useMemo(() => {
     return createAutoLinkedText(
