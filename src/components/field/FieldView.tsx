@@ -9,6 +9,7 @@ import { createAutoLinkedText } from "../../lib/autoLink";
 import { assignStableSlots } from "../../lib/assignStableSlots";
 import PlayerDot from "./PlayerDot";
 import ShareButton from "../ShareButton";
+import { FieldBackground } from "./FieldBackground";
 
 interface FieldViewProps {
   formation: Formation;
@@ -18,11 +19,6 @@ interface FieldViewProps {
   onSelectTerm: (id: string) => void;
 }
 
-/**
- * Renders the field and player dots. Keys are `{category}-slot-{N}`;
- * slot values are reassigned per-render by matching against the
- * previous formation so same-unit switches animate the right pairs.
- */
 export default function FieldView({
   formation,
   formations,
@@ -30,12 +26,10 @@ export default function FieldView({
   onSelectFormation,
   onSelectTerm,
 }: FieldViewProps) {
-  // Holds assigned slots, not author slots — lets A→B→C chain correctly.
   const prevPlayersRef = useRef<RenderedPlayer[] | null>(null);
   const prevCategoryRef = useRef<FormationCategory | null>(null);
 
   const renderedPlayers: RenderedPlayer[] = useMemo(() => {
-    // Cross-category = full remount anyway; don't match against it.
     const prev =
       prevCategoryRef.current === formation.category
         ? prevPlayersRef.current
@@ -69,8 +63,7 @@ export default function FieldView({
         className="relative flex-1 overflow-hidden rounded-xl mx-6 my-4 shadow-inner"
         style={{ background: "#2d5a27" }}
       >
-        <FieldLines />
-        <LineOfScrimmage />
+        <FieldBackground />
 
         {renderedPlayers.map((p) => (
           <PlayerDot
@@ -83,68 +76,13 @@ export default function FieldView({
 
       <div className="px-6 pb-5">
         <div className="flex items-start justify-between gap-3">
-          <h2 className="text-xl font-bold text-slate-800">
-            {formation.name}
-          </h2>
+          <h2 className="text-xl font-bold text-slate-800">{formation.name}</h2>
           <ShareButton key={formation.id} className="shrink-0 mt-0.5" />
         </div>
         <p className="text-slate-500 text-sm mt-1.5 leading-relaxed max-w-2xl">
           {linkedDescription}
         </p>
       </div>
-    </div>
-  );
-}
-
-function FieldLines() {
-  const lines = [0.2, 0.4, 0.6, 0.8];
-  return (
-    <>
-      {lines.map((pct) => (
-        <div
-          key={pct}
-          className="absolute top-0 bottom-0"
-          style={{
-            left: `${pct * 100}%`,
-            width: 1,
-            background: "rgba(255,255,255,0.08)",
-            pointerEvents: "none",
-          }}
-        />
-      ))}
-      {Array.from({ length: 9 }, (_, i) => (
-        <div
-          key={`hash-${i}`}
-          className="absolute left-0 right-0"
-          style={{
-            top: `${((i + 1) / 10) * 100}%`,
-            height: 1,
-            background: "rgba(255,255,255,0.06)",
-            pointerEvents: "none",
-          }}
-        />
-      ))}
-    </>
-  );
-}
-
-function LineOfScrimmage() {
-  return (
-    <div
-      className="absolute top-0 bottom-0"
-      style={{
-        left: "62%",
-        width: 3,
-        background: "rgba(255,255,255,0.35)",
-        pointerEvents: "none",
-      }}
-    >
-      <span
-        className="absolute text-white text-xs font-semibold tracking-widest"
-        style={{ top: 4, left: 6, opacity: 0.6 }}
-      >
-        LOS
-      </span>
     </div>
   );
 }

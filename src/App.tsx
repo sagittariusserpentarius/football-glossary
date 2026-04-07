@@ -1,20 +1,18 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { Routes, Route, Navigate, useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { formations } from "./data/formations";
 import { glossaryTerms } from "./data/terms";
+import { coverages } from "./data/coverages";
 import { SettingsProvider } from "./context/SettingsContext";
 import Sidebar from "./components/sidebar/Sidebar";
 import FieldView from "./components/field/FieldView";
+import CoverageView from "./components/field/CoverageView";
 import TermView from "./components/term/TermView";
 import WelcomeScreen from "./components/WelcomeScreen";
 import type { Selection } from "./types/glossary";
 import { cn } from "./lib/utils";
-import { useState } from "react";
 
-/**
- * Wrapper component for the formation view that extracts the ID from URL params
- */
 function FormationPage({
   onSelectFormation,
   onSelectTerm,
@@ -24,12 +22,7 @@ function FormationPage({
 }) {
   const { id } = useParams<{ id: string }>();
   const formation = formations.find((f) => f.id === id) ?? null;
-
-  // If formation not found, redirect to home
-  if (!formation) {
-    return <Navigate to="/" replace />;
-  }
-
+  if (!formation) return <Navigate to="/" replace />;
   return (
     <FieldView
       formation={formation}
@@ -41,9 +34,27 @@ function FormationPage({
   );
 }
 
-/**
- * Wrapper component for the term view that extracts the ID from URL params
- */
+function CoveragePage({
+  onSelectFormation,
+  onSelectTerm,
+}: {
+  onSelectFormation: (id: string) => void;
+  onSelectTerm: (id: string) => void;
+}) {
+  const { id } = useParams<{ id: string }>();
+  const coverage = coverages.find((c) => c.id === id) ?? null;
+  if (!coverage) return <Navigate to="/" replace />;
+  return (
+    <CoverageView
+      coverage={coverage}
+      formations={formations}
+      glossaryTerms={glossaryTerms}
+      onSelectFormation={onSelectFormation}
+      onSelectTerm={onSelectTerm}
+    />
+  );
+}
+
 function TermPage({
   onSelectFormation,
   onSelectTerm,
@@ -53,12 +64,7 @@ function TermPage({
 }) {
   const { id } = useParams<{ id: string }>();
   const term = glossaryTerms.find((t) => t.id === id) ?? null;
-
-  // If term not found, redirect to home
-  if (!term) {
-    return <Navigate to="/" replace />;
-  }
-
+  if (!term) return <Navigate to="/" replace />;
   return (
     <TermView
       term={term}
@@ -70,26 +76,30 @@ function TermPage({
   );
 }
 
-/**
- * Derives the current selection from URL params for the sidebar highlight
- */
 function useSelectionFromPath(): Selection {
   const path = window.location.hash.replace(/^#/, "");
-  
+
   if (path.startsWith("/formation/")) {
     const id = path.replace("/formation/", "");
     if (formations.some((f) => f.id === id)) {
       return { type: "formation", id };
     }
   }
-  
+
+  if (path.startsWith("/coverage/")) {
+    const id = path.replace("/coverage/", "");
+    if (coverages.some((c) => c.id === id)) {
+      return { type: "coverage", id };
+    }
+  }
+
   if (path.startsWith("/term/")) {
     const id = path.replace("/term/", "");
     if (glossaryTerms.some((t) => t.id === id)) {
       return { type: "term", id };
     }
   }
-  
+
   return null;
 }
 
@@ -99,23 +109,23 @@ export default function App() {
   const selection = useSelectionFromPath();
 
   const handleSelectFormation = useCallback(
-    (id: string) => {
-      navigate(`/formation/${id}`);
-    },
+    (id: string) => navigate(`/formation/${id}`),
+    [navigate]
+  );
+
+  const handleSelectCoverage = useCallback(
+    (id: string) => navigate(`/coverage/${id}`),
     [navigate]
   );
 
   const handleSelectTerm = useCallback(
-    (id: string) => {
-      navigate(`/term/${id}`);
-    },
+    (id: string) => navigate(`/term/${id}`),
     [navigate]
   );
 
   return (
     <SettingsProvider>
       <div className="flex h-screen w-full overflow-hidden bg-slate-100">
-        {/* Sidebar */}
         <div
           className={cn(
             "shrink-0 overflow-hidden",
@@ -127,27 +137,23 @@ export default function App() {
             <Sidebar
               formations={formations}
               glossaryTerms={glossaryTerms}
+              coverages={coverages}
               selection={selection}
               onSelectFormation={handleSelectFormation}
               onSelectTerm={handleSelectTerm}
+              onSelectCoverage={handleSelectCoverage}
             />
           </div>
         </div>
 
-        {/* Collapse toggle strip */}
         <button
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           className="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors duration-150 px-1.5 py-4 flex items-center self-center shrink-0"
           aria-label={isSidebarCollapsed ? "Open sidebar" : "Close sidebar"}
         >
-          {isSidebarCollapsed ? (
-            <ChevronRight size={16} />
-          ) : (
-            <ChevronLeft size={16} />
-          )}
+          {isSidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
 
-        {/* Main content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <Routes>
             <Route path="/" element={<WelcomeScreen />} />
@@ -155,6 +161,15 @@ export default function App() {
               path="/formation/:id"
               element={
                 <FormationPage
+                  onSelectFormation={handleSelectFormation}
+                  onSelectTerm={handleSelectTerm}
+                />
+              }
+            />
+            <Route
+              path="/coverage/:id"
+              element={
+                <CoveragePage
                   onSelectFormation={handleSelectFormation}
                   onSelectTerm={handleSelectTerm}
                 />
@@ -169,7 +184,6 @@ export default function App() {
                 />
               }
             />
-            {/* Catch-all redirect to home */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { Settings } from "lucide-react";
 import type { Formation, FormationCategory } from "../../types/formations";
 import type { GlossaryTerm, TermCategory, Selection } from "../../types/glossary";
+import type { Coverage } from "../../types/coverages";
 import SearchBar from "./SearchBar";
 import CollapsibleGroup, { type SidebarItem } from "./CollapsibleGroup";
 import SettingsPanel from "./SettingsPanel";
@@ -9,9 +10,11 @@ import SettingsPanel from "./SettingsPanel";
 interface SidebarProps {
   formations: Formation[];
   glossaryTerms: GlossaryTerm[];
+  coverages: Coverage[];
   selection: Selection;
   onSelectFormation: (id: string) => void;
   onSelectTerm: (id: string) => void;
+  onSelectCoverage: (id: string) => void;
 }
 
 const FORMATION_CATEGORIES: { key: FormationCategory; title: string }[] = [
@@ -36,12 +39,18 @@ function termToSidebarItem(t: GlossaryTerm): SidebarItem {
   return { id: t.id, label: t.term };
 }
 
+function coverageToSidebarItem(c: Coverage): SidebarItem {
+  return { id: c.id, label: c.name };
+}
+
 export default function Sidebar({
   formations,
   glossaryTerms,
+  coverages,
   selection,
   onSelectFormation,
   onSelectTerm,
+  onSelectCoverage,
 }: SidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSettings, setShowSettings] = useState(false);
@@ -56,6 +65,16 @@ export default function Sidebar({
     );
   }, [formations, searchQuery]);
 
+  const filteredCoverages = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return coverages;
+    return coverages.filter(
+      (c) =>
+        c.name.toLowerCase().includes(query) ||
+        c.description.toLowerCase().includes(query)
+    );
+  }, [coverages, searchQuery]);
+
   const filteredTerms = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return glossaryTerms;
@@ -67,11 +86,14 @@ export default function Sidebar({
   }, [glossaryTerms, searchQuery]);
 
   const selectedFormationId = selection?.type === "formation" ? selection.id : null;
-  const selectedTermId = selection?.type === "term" ? selection.id : null;
+  const selectedCoverageId  = selection?.type === "coverage"  ? selection.id : null;
+  const selectedTermId      = selection?.type === "term"      ? selection.id : null;
 
   const hasFormationResults = filteredFormations.length > 0;
-  const hasTermResults = filteredTerms.length > 0;
-  const hasAnyResults = hasFormationResults || hasTermResults;
+  const hasCoverageResults  = filteredCoverages.length > 0;
+  const hasTermResults      = filteredTerms.length > 0;
+  const hasAnyResults =
+    hasFormationResults || hasCoverageResults || hasTermResults;
 
   return (
     <div className="flex flex-col h-full bg-slate-900">
@@ -97,9 +119,7 @@ export default function Sidebar({
         </button>
       </div>
 
-      {showSettings && (
-        <SettingsPanel onClose={() => setShowSettings(false)} />
-      )}
+      {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
 
       <SearchBar value={searchQuery} onChange={setSearchQuery} />
 
@@ -131,7 +151,27 @@ export default function Sidebar({
           </>
         )}
 
-        {hasFormationResults && hasTermResults && (
+        {hasFormationResults && hasCoverageResults && (
+          <div className="border-t border-slate-700 mx-3 my-2" />
+        )}
+
+        {hasCoverageResults && (
+          <>
+            <div className="px-4 py-2">
+              <h2 className="text-slate-400 text-xs font-bold uppercase tracking-widest">
+                Coverages
+              </h2>
+            </div>
+            <CollapsibleGroup
+              title="Pass Coverages"
+              items={filteredCoverages.map(coverageToSidebarItem)}
+              selectedId={selectedCoverageId}
+              onSelect={onSelectCoverage}
+            />
+          </>
+        )}
+
+        {(hasFormationResults || hasCoverageResults) && hasTermResults && (
           <div className="border-t border-slate-700 mx-3 my-2" />
         )}
 

@@ -10,5 +10,6 @@ export interface GlossaryTerm {
 // Unified selection state for the app
 export type Selection =
   | { type: "formation"; id: string }
-  | { type: "term"; id: string }
+  | { type: "term";      id: string }
+  | { type: "coverage";  id: string }   // ← add this
   | null;
