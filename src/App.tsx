@@ -13,6 +13,10 @@ import WelcomeScreen from "./components/WelcomeScreen";
 import type { Selection } from "./types/glossary";
 import { cn } from "./lib/utils";
 
+/* ------------------------------------------------------------------ */
+/* Page wrappers (read :id from the URL)                              */
+/* ------------------------------------------------------------------ */
+
 function FormationPage({
   onSelectFormation,
   onSelectTerm,
@@ -37,9 +41,17 @@ function FormationPage({
 function CoveragePage({
   onSelectFormation,
   onSelectTerm,
+  offensiveFormationOverride,
+  defensiveFormationOverride,
+  onOffensiveFormationChange,
+  onDefensiveFormationChange,
 }: {
   onSelectFormation: (id: string) => void;
   onSelectTerm: (id: string) => void;
+  offensiveFormationOverride: string | null;
+  defensiveFormationOverride: string | null;
+  onOffensiveFormationChange: (id: string | null) => void;
+  onDefensiveFormationChange: (id: string | null) => void;
 }) {
   const { id } = useParams<{ id: string }>();
   const coverage = coverages.find((c) => c.id === id) ?? null;
@@ -49,6 +61,10 @@ function CoveragePage({
       coverage={coverage}
       formations={formations}
       glossaryTerms={glossaryTerms}
+      offensiveFormationOverride={offensiveFormationOverride}
+      defensiveFormationOverride={defensiveFormationOverride}
+      onOffensiveFormationChange={onOffensiveFormationChange}
+      onDefensiveFormationChange={onDefensiveFormationChange}
       onSelectFormation={onSelectFormation}
       onSelectTerm={onSelectTerm}
     />
@@ -76,61 +92,71 @@ function TermPage({
   );
 }
 
+/* ------------------------------------------------------------------ */
+
 function useSelectionFromPath(): Selection {
   const path = window.location.hash.replace(/^#/, "");
 
   if (path.startsWith("/formation/")) {
     const id = path.replace("/formation/", "");
-    if (formations.some((f) => f.id === id)) {
-      return { type: "formation", id };
-    }
+    if (formations.some((f) => f.id === id)) return { type: "formation", id };
   }
-
   if (path.startsWith("/coverage/")) {
     const id = path.replace("/coverage/", "");
-    if (coverages.some((c) => c.id === id)) {
-      return { type: "coverage", id };
-    }
+    if (coverages.some((c) => c.id === id)) return { type: "coverage", id };
   }
-
   if (path.startsWith("/term/")) {
     const id = path.replace("/term/", "");
-    if (glossaryTerms.some((t) => t.id === id)) {
-      return { type: "term", id };
-    }
+    if (glossaryTerms.some((t) => t.id === id)) return { type: "term", id };
   }
-
   return null;
 }
+
+/* ------------------------------------------------------------------ */
 
 export default function App() {
   const navigate = useNavigate();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const selection = useSelectionFromPath();
 
+  // Formation overrides — persist across coverage switches, reset otherwise.
+  const [offFormationOverride, setOffFormationOverride] = useState<string | null>(null);
+  const [defFormationOverride, setDefFormationOverride] = useState<string | null>(null);
+
   const handleSelectFormation = useCallback(
-    (id: string) => navigate(`/formation/${id}`),
-    [navigate]
+    (id: string) => {
+      // Leaving coverages → forget overrides.
+      setOffFormationOverride(null);
+      setDefFormationOverride(null);
+      navigate(`/formation/${id}`);
+    },
+    [navigate],
   );
 
   const handleSelectCoverage = useCallback(
     (id: string) => navigate(`/coverage/${id}`),
-    [navigate]
+    [navigate],
   );
 
   const handleSelectTerm = useCallback(
-    (id: string) => navigate(`/term/${id}`),
-    [navigate]
+    (id: string) => {
+      // Leaving coverages → forget overrides.
+      setOffFormationOverride(null);
+      setDefFormationOverride(null);
+      navigate(`/term/${id}`);
+    },
+    [navigate],
   );
 
   return (
     <SettingsProvider>
       <div className="flex h-screen w-full overflow-hidden bg-slate-100">
+        {/* Sidebar */}
         <div
           className={cn(
             "shrink-0 overflow-hidden",
             "transition-all duration-300 ease-in-out",
-            isSidebarCollapsed ? "w-0" : "w-72"
+            isSidebarCollapsed ? "w-0" : "w-72",
           )}
         >
           <div className="w-72 h-screen">
@@ -146,6 +172,7 @@ export default function App() {
           </div>
         </div>
 
+        {/* Toggle */}
         <button
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           className="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors duration-150 px-1.5 py-4 flex items-center self-center shrink-0"
@@ -154,9 +181,11 @@ export default function App() {
           {isSidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
 
+        {/* Main content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <Routes>
             <Route path="/" element={<WelcomeScreen />} />
+
             <Route
               path="/formation/:id"
               element={
@@ -166,15 +195,21 @@ export default function App() {
                 />
               }
             />
+
             <Route
               path="/coverage/:id"
               element={
                 <CoveragePage
                   onSelectFormation={handleSelectFormation}
                   onSelectTerm={handleSelectTerm}
+                  offensiveFormationOverride={offFormationOverride}
+                  defensiveFormationOverride={defFormationOverride}
+                  onOffensiveFormationChange={setOffFormationOverride}
+                  onDefensiveFormationChange={setDefFormationOverride}
                 />
               }
             />
+
             <Route
               path="/term/:id"
               element={
@@ -184,6 +219,7 @@ export default function App() {
                 />
               }
             />
+
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

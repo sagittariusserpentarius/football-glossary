@@ -5,16 +5,17 @@
     "category": "offensive",
     "description": "A classic offensive formation in which the quarterback, running back, and fullback align in a single vertical line behind the center. The backfield creates an \"I\" shape. It provides a strong base for run plays while keeping passing options open through play action.",
     "players": [
-      { "key": "c",   "slot": 0, "label": "C",  "positionName": "Center",         "x": 0.62, "y": 0.50 },
-      { "key": "lg",  "slot": 1, "label": "G",  "positionName": "Left Guard",     "x": 0.58, "y": 0.42 },
-      { "key": "rg",  "slot": 2, "label": "G",  "positionName": "Right Guard",    "x": 0.58, "y": 0.58 },
-      { "key": "lt",  "slot": 3, "label": "T",  "positionName": "Left Tackle",    "x": 0.54, "y": 0.36 },
-      { "key": "rt",  "slot": 4, "label": "T",  "positionName": "Right Tackle",   "x": 0.54, "y": 0.64 },
-      { "key": "wr1", "slot": 5, "label": "WR", "positionName": "Wide Receiver",  "x": 0.54, "y": 0.12 },
-      { "key": "wr2", "slot": 6, "label": "WR", "positionName": "Wide Receiver",  "x": 0.54, "y": 0.88 },
-      { "key": "qb",  "slot": 7, "label": "QB", "positionName": "Quarterback",    "x": 0.48, "y": 0.50 },
-      { "key": "hb",  "slot": 8, "label": "HB", "positionName": "Halfback",       "x": 0.38, "y": 0.50 },
-      { "key": "fb",  "slot": 9, "label": "FB", "positionName": "Fullback",       "x": 0.28, "y": 0.50 }
+      { "key": "c",   "slot": 0,  "label": "C",  "positionName": "Center",         "x": 0.62, "y": 0.50 },
+      { "key": "lg",  "slot": 1,  "label": "G",  "positionName": "Left Guard",     "x": 0.58, "y": 0.42 },
+      { "key": "rg",  "slot": 2,  "label": "G",  "positionName": "Right Guard",    "x": 0.58, "y": 0.58 },
+      { "key": "lt",  "slot": 3,  "label": "T",  "positionName": "Left Tackle",    "x": 0.54, "y": 0.36 },
+      { "key": "rt",  "slot": 4,  "label": "T",  "positionName": "Right Tackle",   "x": 0.54, "y": 0.64 },
+      { "key": "wr1", "slot": 5,  "label": "WR", "positionName": "Wide Receiver",  "x": 0.54, "y": 0.12 },
+      { "key": "wr2", "slot": 6,  "label": "WR", "positionName": "Wide Receiver",  "x": 0.54, "y": 0.88 },
+      { "key": "qb",  "slot": 7,  "label": "QB", "positionName": "Quarterback",    "x": 0.48, "y": 0.50 },
+      { "key": "hb",  "slot": 8,  "label": "HB", "positionName": "Halfback",       "x": 0.38, "y": 0.50 },
+      { "key": "fb",  "slot": 9,  "label": "FB", "positionName": "Fullback",       "x": 0.28, "y": 0.50 },
+      { "key": "te",  "slot": 10, "label": "TE", "positionName": "Tight End",      "x": 0.54, "y": 0.72 }
     ]
   },
   {
@@ -23,16 +24,17 @@
     "category": "offensive",
     "description": "The shotgun formation places the quarterback five to seven yards behind the center at the snap, giving him a wider view of the defense and more time to react. Widely used in modern passing attacks and also effective for screen and draw plays.",
     "players": [
-      { "key": "c",   "slot": 0, "label": "C",  "positionName": "Center",         "x": 0.62, "y": 0.50 },
-      { "key": "lg",  "slot": 1, "label": "G",  "positionName": "Left Guard",     "x": 0.58, "y": 0.42 },
-      { "key": "rg",  "slot": 2, "label": "G",  "positionName": "Right Guard",    "x": 0.58, "y": 0.58 },
-      { "key": "lt",  "slot": 3, "label": "T",  "positionName": "Left Tackle",    "x": 0.54, "y": 0.36 },
-      { "key": "rt",  "slot": 4, "label": "T",  "positionName": "Right Tackle",   "x": 0.54, "y": 0.64 },
-      { "key": "wr1", "slot": 5, "label": "WR", "positionName": "Wide Receiver",  "x": 0.54, "y": 0.12 },
-      { "key": "wr2", "slot": 6, "label": "WR", "positionName": "Wide Receiver",  "x": 0.54, "y": 0.88 },
-      { "key": "qb",  "slot": 7, "label": "QB", "positionName": "Quarterback",    "x": 0.40, "y": 0.50 },
-      { "key": "rb1", "slot": 8, "label": "RB", "positionName": "Running Back",   "x": 0.34, "y": 0.38 },
-      { "key": "rb2", "slot": 9, "label": "RB", "positionName": "Running Back",   "x": 0.34, "y": 0.62 }
+      { "key": "c",   "slot": 0,  "label": "C",  "positionName": "Center",         "x": 0.62, "y": 0.50 },
+      { "key": "lg",  "slot": 1,  "label": "G",  "positionName": "Left Guard",     "x": 0.58, "y": 0.42 },
+      { "key": "rg",  "slot": 2,  "label": "G",  "positionName": "Right Guard",    "x": 0.58, "y": 0.58 },
+      { "key": "lt",  "slot": 3,  "label": "T",  "positionName": "Left Tackle",    "x": 0.54, "y": 0.36 },
+      { "key": "rt",  "slot": 4,  "label": "T",  "positionName": "Right Tackle",   "x": 0.54, "y": 0.64 },
+      { "key": "wr1", "slot": 5,  "label": "WR", "positionName": "Wide Receiver",  "x": 0.54, "y": 0.12 },
+      { "key": "wr2", "slot": 6,  "label": "WR", "positionName": "Wide Receiver",  "x": 0.54, "y": 0.88 },
+      { "key": "qb",  "slot": 7,  "label": "QB", "positionName": "Quarterback",    "x": 0.40, "y": 0.50 },
+      { "key": "rb1", "slot": 8,  "label": "RB", "positionName": "Running Back",   "x": 0.34, "y": 0.38 },
+      { "key": "rb2", "slot": 9,  "label": "RB", "positionName": "Running Back",   "x": 0.34, "y": 0.62 },
+      { "key": "te",  "slot": 10, "label": "TE", "positionName": "Tight End",      "x": 0.54, "y": 0.72 }
     ]
   },
   {

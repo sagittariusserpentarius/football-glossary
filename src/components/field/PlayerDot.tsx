@@ -4,6 +4,7 @@ import type { RenderedPlayer, FormationCategory } from "../../types/formations";
 interface PlayerDotProps {
   player: RenderedPlayer;
   category: FormationCategory;
+  animate?: boolean;
 }
 
 const DOT_SIZE = 34;
