@@ -1,5 +1,12 @@
 import { useCallback, useState } from "react";
-import { Routes, Route, Navigate, useParams, useNavigate } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  Navigate,
+  useParams,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { formations } from "./data/formations";
 import { glossaryTerms } from "./data/terms";
@@ -14,7 +21,7 @@ import type { Selection } from "./types/glossary";
 import { cn } from "./lib/utils";
 
 /* ------------------------------------------------------------------ */
-/* Page wrappers (read :id from the URL)                              */
+/* Page wrappers                                                       */
 /* ------------------------------------------------------------------ */
 
 function FormationPage({
@@ -41,30 +48,59 @@ function FormationPage({
 function CoveragePage({
   onSelectFormation,
   onSelectTerm,
-  offensiveFormationOverride,
-  defensiveFormationOverride,
-  onOffensiveFormationChange,
-  onDefensiveFormationChange,
 }: {
   onSelectFormation: (id: string) => void;
   onSelectTerm: (id: string) => void;
-  offensiveFormationOverride: string | null;
-  defensiveFormationOverride: string | null;
-  onOffensiveFormationChange: (id: string | null) => void;
-  onDefensiveFormationChange: (id: string | null) => void;
 }) {
   const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const coverage = coverages.find((c) => c.id === id) ?? null;
+
+  const defOverride = searchParams.get("def") || null;
+  const offOverride = searchParams.get("off") || null;
+
+  const handleDefChange = useCallback(
+    (formId: string | null) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (formId) next.set("def", formId);
+          else next.delete("def");
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const handleOffChange = useCallback(
+    (formId: string | null) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (formId) next.set("off", formId);
+          else next.delete("off");
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
   if (!coverage) return <Navigate to="/" replace />;
+
   return (
     <CoverageView
       coverage={coverage}
       formations={formations}
       glossaryTerms={glossaryTerms}
-      offensiveFormationOverride={offensiveFormationOverride}
-      defensiveFormationOverride={defensiveFormationOverride}
-      onOffensiveFormationChange={onOffensiveFormationChange}
-      onDefensiveFormationChange={onDefensiveFormationChange}
+      offensiveFormationOverride={offOverride}
+      defensiveFormationOverride={defOverride}
+      onOffensiveFormationChange={handleOffChange}
+      onDefensiveFormationChange={handleDefChange}
       onSelectFormation={onSelectFormation}
       onSelectTerm={onSelectTerm}
     />
@@ -95,7 +131,8 @@ function TermPage({
 /* ------------------------------------------------------------------ */
 
 function useSelectionFromPath(): Selection {
-  const path = window.location.hash.replace(/^#/, "");
+  // Strip query params before matching the path segment.
+  const path = window.location.hash.replace(/^#/, "").split("?")[0];
 
   if (path.startsWith("/formation/")) {
     const id = path.replace("/formation/", "");
@@ -119,31 +156,28 @@ export default function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const selection = useSelectionFromPath();
 
-  // Formation overrides — persist across coverage switches, reset otherwise.
-  const [offFormationOverride, setOffFormationOverride] = useState<string | null>(null);
-  const [defFormationOverride, setDefFormationOverride] = useState<string | null>(null);
-
+  // Navigating to a formation or term drops all override params.
   const handleSelectFormation = useCallback(
-    (id: string) => {
-      // Leaving coverages → forget overrides.
-      setOffFormationOverride(null);
-      setDefFormationOverride(null);
-      navigate(`/formation/${id}`);
-    },
-    [navigate],
-  );
-
-  const handleSelectCoverage = useCallback(
-    (id: string) => navigate(`/coverage/${id}`),
+    (id: string) => navigate(`/formation/${id}`),
     [navigate],
   );
 
   const handleSelectTerm = useCallback(
+    (id: string) => navigate(`/term/${id}`),
+    [navigate],
+  );
+
+  // Navigating between coverages preserves any override params that are
+  // currently in the URL so the user's formation choices stick.
+  const handleSelectCoverage = useCallback(
     (id: string) => {
-      // Leaving coverages → forget overrides.
-      setOffFormationOverride(null);
-      setDefFormationOverride(null);
-      navigate(`/term/${id}`);
+      const hash = window.location.hash.replace(/^#/, "");
+      let search = "";
+      if (hash.startsWith("/coverage/")) {
+        const qIdx = hash.indexOf("?");
+        if (qIdx >= 0) search = hash.slice(qIdx);
+      }
+      navigate(`/coverage/${id}${search}`);
     },
     [navigate],
   );
@@ -151,7 +185,6 @@ export default function App() {
   return (
     <SettingsProvider>
       <div className="flex h-screen w-full overflow-hidden bg-slate-100">
-        {/* Sidebar */}
         <div
           className={cn(
             "shrink-0 overflow-hidden",
@@ -172,20 +205,21 @@ export default function App() {
           </div>
         </div>
 
-        {/* Toggle */}
         <button
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           className="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors duration-150 px-1.5 py-4 flex items-center self-center shrink-0"
           aria-label={isSidebarCollapsed ? "Open sidebar" : "Close sidebar"}
         >
-          {isSidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          {isSidebarCollapsed ? (
+            <ChevronRight size={16} />
+          ) : (
+            <ChevronLeft size={16} />
+          )}
         </button>
 
-        {/* Main content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <Routes>
             <Route path="/" element={<WelcomeScreen />} />
-
             <Route
               path="/formation/:id"
               element={
@@ -195,21 +229,15 @@ export default function App() {
                 />
               }
             />
-
             <Route
               path="/coverage/:id"
               element={
                 <CoveragePage
                   onSelectFormation={handleSelectFormation}
                   onSelectTerm={handleSelectTerm}
-                  offensiveFormationOverride={offFormationOverride}
-                  defensiveFormationOverride={defFormationOverride}
-                  onOffensiveFormationChange={setOffFormationOverride}
-                  onDefensiveFormationChange={setDefFormationOverride}
                 />
               }
             />
-
             <Route
               path="/term/:id"
               element={
@@ -219,7 +247,6 @@ export default function App() {
                 />
               }
             />
-
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

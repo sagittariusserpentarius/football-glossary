@@ -9,10 +9,8 @@ export const coverages: Coverage[] = [
     defensiveFormationId: "4-3-defense",
     offensiveFormationId: "shotgun",
     alignments: {
-      // Corners roll down to the flat.
       cb1: { x: 0.50, y: 0.15 },
       cb2: { x: 0.50, y: 0.85 },
-      // Safeties split deep halves.
       fs:  { x: 0.10, y: 0.25 },
       ss:  { x: 0.10, y: 0.75 },
     },
@@ -47,7 +45,7 @@ export const coverages: Coverage[] = [
       cb1:  { x: 0.14, y: 0.12 },
       cb2:  { x: 0.14, y: 0.88 },
       fs:   { x: 0.08, y: 0.50 },
-      ss:   { x: 0.38, y: 0.82 }, // walked down to the strong flat
+      ss:   { x: 0.38, y: 0.82 },
       olb1: { x: 0.42, y: 0.25 },
       mlb:  { x: 0.42, y: 0.50 },
       olb2: { x: 0.42, y: 0.64 },
@@ -79,27 +77,24 @@ export const coverages: Coverage[] = [
     defensiveFormationId: "4-3-defense",
     offensiveFormationId: "shotgun",
     alignments: {
-      cb1:  { x: 0.50, y: 0.13 }, // pressed on WR1
-      cb2:  { x: 0.50, y: 0.87 }, // pressed on WR2
-      fs:   { x: 0.08, y: 0.50 }, // deep middle
-      ss:   { x: 0.40, y: 0.72 }, // over the TE
-      mlb:  { x: 0.42, y: 0.42 }, // matched on RB1
-      olb1: { x: 0.42, y: 0.26 }, // blitz
-      olb2: { x: 0.42, y: 0.58 }, // matched on RB2
+      cb1:  { x: 0.50, y: 0.13 },
+      cb2:  { x: 0.50, y: 0.87 },
+      fs:   { x: 0.08, y: 0.50 },
+      ss:   { x: 0.40, y: 0.72 },
+      mlb:  { x: 0.42, y: 0.42 },
+      olb1: { x: 0.42, y: 0.26 },
+      olb2: { x: 0.42, y: 0.58 },
     },
     responsibilities: [
-      // Single-high safety
       { type: "zone", kind: "deep", playerKey: "fs", label: "Deep Middle",
         points: [{ x: 0.00, y: 0.20 }, { x: 0.30, y: 0.20 }, { x: 0.30, y: 0.80 }, { x: 0.00, y: 0.80 }] },
 
-      // Man assignments — `to` coordinates are in mirrored/coverage-view space.
-      { type: "arrow", kind: "man",   playerKey: "cb1",  to: { x: 0.70, y: 0.12 } }, // → WR1
-      { type: "arrow", kind: "man",   playerKey: "cb2",  to: { x: 0.70, y: 0.88 } }, // → WR2
-      { type: "arrow", kind: "man",   playerKey: "ss",   to: { x: 0.70, y: 0.72 } }, // → TE
-      { type: "arrow", kind: "man",   playerKey: "mlb",  to: { x: 0.90, y: 0.38 } }, // → RB1
-      { type: "arrow", kind: "man",   playerKey: "olb2", to: { x: 0.90, y: 0.62 } }, // → RB2
+      { type: "arrow", kind: "man",   playerKey: "cb1",  targetKey: "wr1", to: { x: 0.70, y: 0.12 } },
+      { type: "arrow", kind: "man",   playerKey: "cb2",  targetKey: "wr2", to: { x: 0.70, y: 0.88 } },
+      { type: "arrow", kind: "man",   playerKey: "ss",   targetKey: "te",  to: { x: 0.70, y: 0.72 } },
+      { type: "arrow", kind: "man",   playerKey: "mlb",  targetKey: "rb1", to: { x: 0.90, y: 0.38 } },
+      { type: "arrow", kind: "man",   playerKey: "olb2", targetKey: "rb2", to: { x: 0.90, y: 0.62 } },
 
-      // Weakside OLB brings pressure.
       { type: "arrow", kind: "blitz", playerKey: "olb1", to: { x: 0.62, y: 0.30 } },
     ],
   },

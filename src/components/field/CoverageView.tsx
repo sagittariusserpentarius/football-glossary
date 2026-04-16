@@ -153,7 +153,41 @@ export default function CoverageView({
     prevOffRef.current = offenders;
   }, [offenders]);
 
-  /* ---------- Player-position map for overlay ---------- */
+  /* ---------- Target-key map (default off-key → current position) --- */
+  const targetKeyMap = useMemo(() => {
+    const map = new Map<string, Point>();
+    if (!defaultOffFormation || !offensiveFormation) return map;
+
+    // Fast path: same formation — direct key-to-mirrored-position.
+    if (defaultOffFormation.id === offensiveFormation.id) {
+      for (const p of offensiveFormation.players) {
+        map.set(p.key, { x: 2 * LOS_X - p.x, y: p.y });
+      }
+      return map;
+    }
+
+    // Different formations: use assignStableSlots to find the best
+    // correspondence between default and current players.
+    const defaultMirrored = defaultOffFormation.players.map((p) => ({
+      ...p,
+      x: 2 * LOS_X - p.x,
+    }));
+    const currentMirrored = offensiveFormation.players.map((p) => ({
+      ...p,
+      x: 2 * LOS_X - p.x,
+    }));
+
+    const mapped = assignStableSlots(defaultMirrored, currentMirrored);
+
+    for (const mp of mapped) {
+      const dp = defaultMirrored.find((p) => p.slot === mp.slot);
+      if (dp) map.set(dp.key, { x: mp.x, y: mp.y });
+    }
+
+    return map;
+  }, [defaultOffFormation, offensiveFormation]);
+
+  /* ---------- Player-position map for overlay origins ---------- */
   const playerPositions = useMemo(() => {
     const map = new Map<string, Point>();
     for (const p of offenders) map.set(p.key, { x: p.x, y: p.y });
@@ -228,23 +262,14 @@ export default function CoverageView({
           coverageId={coverage.id}
           responsibilities={coverage.responsibilities}
           playerPositions={playerPositions}
+          targetKeyMap={targetKeyMap}
         />
 
         {offenders.map((p) => (
-          <PlayerDot
-            key={`off-${p.slot}`}
-            player={p}
-            category="offensive"
-            animate
-          />
+          <PlayerDot key={`off-${p.slot}`} player={p} category="offensive" />
         ))}
         {defenders.map((p) => (
-          <PlayerDot
-            key={`def-${p.slot}`}
-            player={p}
-            category="defensive"
-            animate
-          />
+          <PlayerDot key={`def-${p.slot}`} player={p} category="defensive" />
         ))}
       </div>
 
@@ -275,6 +300,11 @@ interface FormationSelectProps {
   onChange: (id: string | null) => void;
 }
 
+/**
+ * A single flat dropdown whose entries are all formations of the given
+ * category. The coverage's own default is labelled "(default)".
+ * Picking it clears the override; picking anything else sets it.
+ */
 function FormationSelect({
   label,
   formations,
@@ -282,7 +312,8 @@ function FormationSelect({
   overrideId,
   onChange,
 }: FormationSelectProps) {
-  const isOverridden = overrideId !== null;
+  const isOverridden =
+    overrideId !== null && overrideId !== defaultFormation?.id;
 
   return (
     <div className="flex items-center gap-2 min-w-0">
@@ -296,15 +327,16 @@ function FormationSelect({
           hover:border-slate-300 transition-colors cursor-pointer
           ${isOverridden ? "border-amber-400 ring-1 ring-amber-300/50" : "border-slate-200"}
         `}
-        value={overrideId ?? ""}
-        onChange={(e) => onChange(e.target.value || null)}
+        value={overrideId ?? defaultFormation?.id ?? ""}
+        onChange={(e) => {
+          const id = e.target.value;
+          onChange(id === defaultFormation?.id ? null : id);
+        }}
       >
-        <option value="">
-          {defaultFormation ? defaultFormation.name : "Default"} (default)
-        </option>
         {formations.map((f) => (
           <option key={f.id} value={f.id}>
             {f.name}
+            {f.id === defaultFormation?.id ? " (default)" : ""}
           </option>
         ))}
       </select>
@@ -320,12 +352,14 @@ interface CoverageOverlayProps {
   coverageId: string;
   responsibilities: Responsibility[];
   playerPositions: Map<string, Point>;
+  targetKeyMap: Map<string, Point>;
 }
 
 function CoverageOverlay({
   coverageId,
   responsibilities,
   playerPositions,
+  targetKeyMap,
 }: CoverageOverlayProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -367,7 +401,6 @@ function CoverageOverlay({
       {W > 0 && H > 0 && (
         <svg ref={svgRef} className="absolute inset-0 w-full h-full">
           <defs>
-            {/* Man: slim filled triangle */}
             <marker
               id={ARROW_STYLES.man.markerId}
               markerUnits="userSpaceOnUse"
@@ -380,7 +413,6 @@ function CoverageOverlay({
               <path d="M0,0 L12,6 L0,12 Z" fill={ARROW_STYLES.man.color} />
             </marker>
 
-            {/* Blitz: double-chevron arrowhead */}
             <marker
               id={ARROW_STYLES.blitz.markerId}
               markerUnits="userSpaceOnUse"
@@ -454,17 +486,23 @@ function CoverageOverlay({
               );
             }
 
-            // arrow
+            // arrow — resolve target via targetKeyMap when available
             const style = ARROW_STYLES[r.kind];
             const origin = r.from ?? playerPositions.get(r.playerKey);
             if (!origin) return null;
+
+            const resolvedTo =
+              r.targetKey != null
+                ? targetKeyMap.get(r.targetKey) ?? r.to
+                : r.to;
+
             const x1 = toX(origin.x);
             const y1 = toY(origin.y);
-            const x2 = toX(r.to.x);
-            const y2 = toY(r.to.y);
+            const x2 = toX(resolvedTo.x);
+            const y2 = toY(resolvedTo.y);
             const midX = (x1 + x2) / 2;
             const midY = (y1 + y2) / 2;
-            const label = r.label ?? style.defaultLineLabel;
+            const arrowLabel = r.label ?? style.defaultLineLabel;
 
             return (
               <g key={i}>
@@ -479,7 +517,7 @@ function CoverageOverlay({
                   strokeLinecap="round"
                   markerEnd={`url(#${style.markerId})`}
                 />
-                {label && (
+                {arrowLabel && (
                   <text
                     x={midX}
                     y={midY}
@@ -493,7 +531,7 @@ function CoverageOverlay({
                     paintOrder="stroke"
                     style={{ letterSpacing: "0.06em" }}
                   >
-                    {label}
+                    {arrowLabel}
                   </text>
                 )}
               </g>
