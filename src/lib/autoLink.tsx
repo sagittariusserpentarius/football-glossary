@@ -15,6 +15,11 @@ function escapeRegex(str: string): string {
 /**
  * Takes a text string and returns React nodes with clickable links
  * for any terms or formations that are defined in the glossary.
+ *
+ * Only the first occurrence of each linkable item is turned into a
+ * link — subsequent repeats render as plain text. This avoids
+ * auto-linking "irrelevant" usages where the same word is used in
+ * normal prose after already having been introduced.
  */
 export function createAutoLinkedText(
   text: string,
@@ -54,6 +59,10 @@ export function createAutoLinkedText(
   let match: RegExpExecArray | null;
   let keyCounter = 0;
 
+  // Track which linkables have already been rendered as a link so we
+  // only link the first occurrence of each term in a given text block.
+  const alreadyLinked = new Set<string>();
+
   while ((match = regex.exec(text)) !== null) {
     // Add text before this match
     if (match.index > lastIndex) {
@@ -69,7 +78,13 @@ export function createAutoLinkedText(
       (l) => l.displayName.toLowerCase() === matchedText.toLowerCase()
     );
 
-    if (linkable && linkable.id !== currentId) {
+    const shouldLink =
+      !!linkable &&
+      linkable.id !== currentId &&
+      !alreadyLinked.has(linkable.id);
+
+    if (shouldLink && linkable) {
+      alreadyLinked.add(linkable.id);
       // Create a clickable link
       parts.push(
         <button
@@ -85,7 +100,7 @@ export function createAutoLinkedText(
         </button>
       );
     } else {
-      // It's the current term or not found, don't link
+      // It's the current term, not found, or an already-linked repeat — render plain.
       parts.push(<span key={`text-${keyCounter++}`}>{matchedText}</span>);
     }
 
