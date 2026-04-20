@@ -32,13 +32,34 @@ function FormationPage({
   onSelectTerm: (id: string) => void;
 }) {
   const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const formation = formations.find((f) => f.id === id) ?? null;
+
+  const opponentId = searchParams.get("vs") || null;
+
+  const handleOpponentChange = useCallback(
+    (formId: string | null) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (formId) next.set("vs", formId);
+          else next.delete("vs");
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
   if (!formation) return <Navigate to="/" replace />;
   return (
     <FieldView
       formation={formation}
       formations={formations}
       glossaryTerms={glossaryTerms}
+      opponentId={opponentId}
+      onOpponentChange={handleOpponentChange}
       onSelectFormation={onSelectFormation}
       onSelectTerm={onSelectTerm}
     />
@@ -53,54 +74,13 @@ function CoveragePage({
   onSelectTerm: (id: string) => void;
 }) {
   const { id } = useParams<{ id: string }>();
-  const [searchParams, setSearchParams] = useSearchParams();
-
   const coverage = coverages.find((c) => c.id === id) ?? null;
-
-  const defOverride = searchParams.get("def") || null;
-  const offOverride = searchParams.get("off") || null;
-
-  const handleDefChange = useCallback(
-    (formId: string | null) => {
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev);
-          if (formId) next.set("def", formId);
-          else next.delete("def");
-          return next;
-        },
-        { replace: true },
-      );
-    },
-    [setSearchParams],
-  );
-
-  const handleOffChange = useCallback(
-    (formId: string | null) => {
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev);
-          if (formId) next.set("off", formId);
-          else next.delete("off");
-          return next;
-        },
-        { replace: true },
-      );
-    },
-    [setSearchParams],
-  );
-
   if (!coverage) return <Navigate to="/" replace />;
-
   return (
     <CoverageView
       coverage={coverage}
       formations={formations}
       glossaryTerms={glossaryTerms}
-      offensiveFormationOverride={offOverride}
-      defensiveFormationOverride={defOverride}
-      onOffensiveFormationChange={handleOffChange}
-      onDefensiveFormationChange={handleDefChange}
       onSelectFormation={onSelectFormation}
       onSelectTerm={onSelectTerm}
     />
@@ -131,7 +111,6 @@ function TermPage({
 /* ------------------------------------------------------------------ */
 
 function useSelectionFromPath(): Selection {
-  // Strip query params before matching the path segment.
   const path = window.location.hash.replace(/^#/, "").split("?")[0];
 
   if (path.startsWith("/formation/")) {
@@ -156,29 +135,28 @@ export default function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const selection = useSelectionFromPath();
 
-  // Navigating to a formation or term drops all override params.
+  // Preserve the ?vs= opponent param when hopping between formations.
   const handleSelectFormation = useCallback(
-    (id: string) => navigate(`/formation/${id}`),
+    (id: string) => {
+      const hash = window.location.hash.replace(/^#/, "");
+      let search = "";
+      if (hash.startsWith("/formation/")) {
+        const qIdx = hash.indexOf("?");
+        if (qIdx >= 0) search = hash.slice(qIdx);
+      }
+      navigate(`/formation/${id}${search}`);
+    },
+    [navigate],
+  );
+
+  // Coverages and terms are simple navigations — no params to carry.
+  const handleSelectCoverage = useCallback(
+    (id: string) => navigate(`/coverage/${id}`),
     [navigate],
   );
 
   const handleSelectTerm = useCallback(
     (id: string) => navigate(`/term/${id}`),
-    [navigate],
-  );
-
-  // Navigating between coverages preserves any override params that are
-  // currently in the URL so the user's formation choices stick.
-  const handleSelectCoverage = useCallback(
-    (id: string) => {
-      const hash = window.location.hash.replace(/^#/, "");
-      let search = "";
-      if (hash.startsWith("/coverage/")) {
-        const qIdx = hash.indexOf("?");
-        if (qIdx >= 0) search = hash.slice(qIdx);
-      }
-      navigate(`/coverage/${id}${search}`);
-    },
     [navigate],
   );
 

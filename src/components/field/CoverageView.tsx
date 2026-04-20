@@ -60,10 +60,6 @@ interface CoverageViewProps {
   coverage: Coverage;
   formations: Formation[];
   glossaryTerms: GlossaryTerm[];
-  offensiveFormationOverride: string | null;
-  defensiveFormationOverride: string | null;
-  onOffensiveFormationChange: (id: string | null) => void;
-  onDefensiveFormationChange: (id: string | null) => void;
   onSelectFormation: (id: string) => void;
   onSelectTerm: (id: string) => void;
 }
@@ -76,37 +72,14 @@ export default function CoverageView({
   coverage,
   formations,
   glossaryTerms,
-  offensiveFormationOverride,
-  defensiveFormationOverride,
-  onOffensiveFormationChange,
-  onDefensiveFormationChange,
   onSelectFormation,
   onSelectTerm,
 }: CoverageViewProps) {
-  /* ---------- Effective formation IDs ---------- */
-  const effectiveDefId =
-    defensiveFormationOverride ?? coverage.defensiveFormationId;
-  const effectiveOffId =
-    offensiveFormationOverride ?? coverage.offensiveFormationId;
-
-  /* ---------- Formation lookups ---------- */
-  const defensiveFormation = formations.find((f) => f.id === effectiveDefId);
-  const offensiveFormation = formations.find((f) => f.id === effectiveOffId);
-  const defaultDefFormation = formations.find(
+  const defensiveFormation = formations.find(
     (f) => f.id === coverage.defensiveFormationId,
   );
-  const defaultOffFormation = formations.find(
+  const offensiveFormation = formations.find(
     (f) => f.id === coverage.offensiveFormationId,
-  );
-
-  /* ---------- Formation lists for dropdowns ---------- */
-  const defensiveFormations = useMemo(
-    () => formations.filter((f) => f.category === "defensive"),
-    [formations],
-  );
-  const offensiveFormations = useMemo(
-    () => formations.filter((f) => f.category === "offensive"),
-    [formations],
   );
 
   /* ---------- Raw player positions ---------- */
@@ -115,12 +88,7 @@ export default function CoverageView({
     const overrides = coverage.alignments ?? {};
     return defensiveFormation.players.map((p) => {
       const o = overrides[p.key];
-      return {
-        ...p,
-        x: o?.x ?? p.x,
-        y: o?.y ?? p.y,
-        opacity: 1,
-      };
+      return { ...p, x: o?.x ?? p.x, y: o?.y ?? p.y, opacity: 1 };
     });
   }, [defensiveFormation, coverage.alignments]);
 
@@ -153,41 +121,7 @@ export default function CoverageView({
     prevOffRef.current = offenders;
   }, [offenders]);
 
-  /* ---------- Target-key map (default off-key → current position) --- */
-  const targetKeyMap = useMemo(() => {
-    const map = new Map<string, Point>();
-    if (!defaultOffFormation || !offensiveFormation) return map;
-
-    // Fast path: same formation — direct key-to-mirrored-position.
-    if (defaultOffFormation.id === offensiveFormation.id) {
-      for (const p of offensiveFormation.players) {
-        map.set(p.key, { x: 2 * LOS_X - p.x, y: p.y });
-      }
-      return map;
-    }
-
-    // Different formations: use assignStableSlots to find the best
-    // correspondence between default and current players.
-    const defaultMirrored = defaultOffFormation.players.map((p) => ({
-      ...p,
-      x: 2 * LOS_X - p.x,
-    }));
-    const currentMirrored = offensiveFormation.players.map((p) => ({
-      ...p,
-      x: 2 * LOS_X - p.x,
-    }));
-
-    const mapped = assignStableSlots(defaultMirrored, currentMirrored);
-
-    for (const mp of mapped) {
-      const dp = defaultMirrored.find((p) => p.slot === mp.slot);
-      if (dp) map.set(dp.key, { x: mp.x, y: mp.y });
-    }
-
-    return map;
-  }, [defaultOffFormation, offensiveFormation]);
-
-  /* ---------- Player-position map for overlay origins ---------- */
+  /* ---------- Player-position map for overlay ---------- */
   const playerPositions = useMemo(() => {
     const map = new Map<string, Point>();
     for (const p of offenders) map.set(p.key, { x: p.x, y: p.y });
@@ -220,40 +154,19 @@ export default function CoverageView({
     [coverage, formations, glossaryTerms, onSelectFormation, onSelectTerm],
   );
 
-  /* ---------- Guard: missing formation ---------- */
   if (!defensiveFormation || !offensiveFormation) {
     return (
       <div className="p-6 text-slate-500">
-        Coverage &ldquo;{coverage.name}&rdquo; references a formation that could
-        not be found.
+        Coverage &ldquo;{coverage.name}&rdquo; is missing a referenced
+        formation.
       </div>
     );
   }
 
-  /* ---------- Render ---------- */
   return (
     <div className="flex flex-col h-full w-full">
-      {/* Formation selectors */}
-      <div className="flex justify-between items-center px-6 pt-3 pb-1 gap-4">
-        <FormationSelect
-          label="Defense"
-          formations={defensiveFormations}
-          defaultFormation={defaultDefFormation ?? null}
-          overrideId={defensiveFormationOverride}
-          onChange={onDefensiveFormationChange}
-        />
-        <FormationSelect
-          label="Offense"
-          formations={offensiveFormations}
-          defaultFormation={defaultOffFormation ?? null}
-          overrideId={offensiveFormationOverride}
-          onChange={onOffensiveFormationChange}
-        />
-      </div>
-
-      {/* Field */}
       <div
-        className="relative flex-1 overflow-hidden rounded-xl mx-6 mt-1 mb-2 shadow-inner"
+        className="relative flex-1 overflow-hidden rounded-xl mx-6 mt-4 mb-2 shadow-inner"
         style={{ background: "#2d5a27" }}
       >
         <FieldBackground />
@@ -262,14 +175,21 @@ export default function CoverageView({
           coverageId={coverage.id}
           responsibilities={coverage.responsibilities}
           playerPositions={playerPositions}
-          targetKeyMap={targetKeyMap}
         />
 
         {offenders.map((p) => (
-          <PlayerDot key={`off-${p.slot}`} player={p} category="offensive" />
+          <PlayerDot
+            key={`off-${p.slot}`}
+            player={p}
+            category="offensive"
+          />
         ))}
         {defenders.map((p) => (
-          <PlayerDot key={`def-${p.slot}`} player={p} category="defensive" />
+          <PlayerDot
+            key={`def-${p.slot}`}
+            player={p}
+            category="defensive"
+          />
         ))}
       </div>
 
@@ -289,62 +209,6 @@ export default function CoverageView({
 }
 
 /* ------------------------------------------------------------------ */
-/* FormationSelect                                                     */
-/* ------------------------------------------------------------------ */
-
-interface FormationSelectProps {
-  label: string;
-  formations: Formation[];
-  defaultFormation: Formation | null;
-  overrideId: string | null;
-  onChange: (id: string | null) => void;
-}
-
-/**
- * A single flat dropdown whose entries are all formations of the given
- * category. The coverage's own default is labelled "(default)".
- * Picking it clears the override; picking anything else sets it.
- */
-function FormationSelect({
-  label,
-  formations,
-  defaultFormation,
-  overrideId,
-  onChange,
-}: FormationSelectProps) {
-  const isOverridden =
-    overrideId !== null && overrideId !== defaultFormation?.id;
-
-  return (
-    <div className="flex items-center gap-2 min-w-0">
-      <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest whitespace-nowrap">
-        {label}
-      </span>
-      <select
-        className={`
-          text-sm bg-white border rounded-lg px-2.5 py-1 text-slate-700 truncate
-          focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500
-          hover:border-slate-300 transition-colors cursor-pointer
-          ${isOverridden ? "border-amber-400 ring-1 ring-amber-300/50" : "border-slate-200"}
-        `}
-        value={overrideId ?? defaultFormation?.id ?? ""}
-        onChange={(e) => {
-          const id = e.target.value;
-          onChange(id === defaultFormation?.id ? null : id);
-        }}
-      >
-        {formations.map((f) => (
-          <option key={f.id} value={f.id}>
-            {f.name}
-            {f.id === defaultFormation?.id ? " (default)" : ""}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
 /* Overlay                                                             */
 /* ------------------------------------------------------------------ */
 
@@ -352,21 +216,18 @@ interface CoverageOverlayProps {
   coverageId: string;
   responsibilities: Responsibility[];
   playerPositions: Map<string, Point>;
-  targetKeyMap: Map<string, Point>;
 }
 
 function CoverageOverlay({
   coverageId,
   responsibilities,
   playerPositions,
-  targetKeyMap,
 }: CoverageOverlayProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const prevCoverageIdRef = useRef(coverageId);
 
-  /* Resize tracking */
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -380,7 +241,6 @@ function CoverageOverlay({
     return () => observer.disconnect();
   }, []);
 
-  /* Subtle fade-in when the coverage changes */
   useEffect(() => {
     if (prevCoverageIdRef.current !== coverageId && svgRef.current) {
       svgRef.current.animate(
@@ -412,7 +272,6 @@ function CoverageOverlay({
             >
               <path d="M0,0 L12,6 L0,12 Z" fill={ARROW_STYLES.man.color} />
             </marker>
-
             <marker
               id={ARROW_STYLES.blitz.markerId}
               markerUnits="userSpaceOnUse"
@@ -486,23 +345,16 @@ function CoverageOverlay({
               );
             }
 
-            // arrow — resolve target via targetKeyMap when available
             const style = ARROW_STYLES[r.kind];
             const origin = r.from ?? playerPositions.get(r.playerKey);
             if (!origin) return null;
-
-            const resolvedTo =
-              r.targetKey != null
-                ? targetKeyMap.get(r.targetKey) ?? r.to
-                : r.to;
-
             const x1 = toX(origin.x);
             const y1 = toY(origin.y);
-            const x2 = toX(resolvedTo.x);
-            const y2 = toY(resolvedTo.y);
+            const x2 = toX(r.to.x);
+            const y2 = toY(r.to.y);
             const midX = (x1 + x2) / 2;
             const midY = (y1 + y2) / 2;
-            const arrowLabel = r.label ?? style.defaultLineLabel;
+            const label = r.label ?? style.defaultLineLabel;
 
             return (
               <g key={i}>
@@ -517,7 +369,7 @@ function CoverageOverlay({
                   strokeLinecap="round"
                   markerEnd={`url(#${style.markerId})`}
                 />
-                {arrowLabel && (
+                {label && (
                   <text
                     x={midX}
                     y={midY}
@@ -531,7 +383,7 @@ function CoverageOverlay({
                     paintOrder="stroke"
                     style={{ letterSpacing: "0.06em" }}
                   >
-                    {arrowLabel}
+                    {label}
                   </text>
                 )}
               </g>
