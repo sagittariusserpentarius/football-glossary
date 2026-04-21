@@ -72,8 +72,10 @@ export default function CoverageView({
   coverage,
   formations,
   glossaryTerms,
+  coverages,
   onSelectFormation,
   onSelectTerm,
+  onSelectCoverage,
 }: CoverageViewProps) {
   const defensiveFormation = formations.find(
     (f) => f.id === coverage.defensiveFormationId,
@@ -141,17 +143,28 @@ export default function CoverageView({
   }, [coverage.responsibilities]);
 
   /* ---------- Auto-linked description ---------- */
+
   const linkedDescription = useMemo(
     () =>
       createAutoLinkedText(
         coverage.description,
         formations,
         glossaryTerms,
+        coverages,
         onSelectFormation,
         onSelectTerm,
+        onSelectCoverage,
         coverage.id,
       ),
-    [coverage, formations, glossaryTerms, onSelectFormation, onSelectTerm],
+    [
+      coverage,
+      formations,
+      glossaryTerms,
+      coverages,
+      onSelectFormation,
+      onSelectTerm,
+      onSelectCoverage,
+    ],
   );
 
   if (!defensiveFormation || !offensiveFormation) {

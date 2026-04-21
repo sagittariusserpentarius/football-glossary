@@ -27,9 +27,11 @@ import { cn } from "./lib/utils";
 function FormationPage({
   onSelectFormation,
   onSelectTerm,
+  onSelectCoverage,
 }: {
   onSelectFormation: (id: string) => void;
   onSelectTerm: (id: string) => void;
+  onSelectCoverage: (id: string) => void;
 }) {
   const { id } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -58,10 +60,12 @@ function FormationPage({
       formation={formation}
       formations={formations}
       glossaryTerms={glossaryTerms}
+      coverages={coverages}
       opponentId={opponentId}
       onOpponentChange={handleOpponentChange}
       onSelectFormation={onSelectFormation}
       onSelectTerm={onSelectTerm}
+      onSelectCoverage={onSelectCoverage}
     />
   );
 }
@@ -69,9 +73,11 @@ function FormationPage({
 function CoveragePage({
   onSelectFormation,
   onSelectTerm,
+  onSelectCoverage,
 }: {
   onSelectFormation: (id: string) => void;
   onSelectTerm: (id: string) => void;
+  onSelectCoverage: (id: string) => void;
 }) {
   const { id } = useParams<{ id: string }>();
   const coverage = coverages.find((c) => c.id === id) ?? null;
@@ -81,8 +87,10 @@ function CoveragePage({
       coverage={coverage}
       formations={formations}
       glossaryTerms={glossaryTerms}
+      coverages={coverages}
       onSelectFormation={onSelectFormation}
       onSelectTerm={onSelectTerm}
+      onSelectCoverage={onSelectCoverage}
     />
   );
 }
@@ -90,9 +98,11 @@ function CoveragePage({
 function TermPage({
   onSelectFormation,
   onSelectTerm,
+  onSelectCoverage,
 }: {
   onSelectFormation: (id: string) => void;
   onSelectTerm: (id: string) => void;
+  onSelectCoverage: (id: string) => void;
 }) {
   const { id } = useParams<{ id: string }>();
   const term = glossaryTerms.find((t) => t.id === id) ?? null;
@@ -102,8 +112,10 @@ function TermPage({
       term={term}
       formations={formations}
       allTerms={glossaryTerms}
+      coverages={coverages}
       onSelectFormation={onSelectFormation}
       onSelectTerm={onSelectTerm}
+      onSelectCoverage={onSelectCoverage}
     />
   );
 }
@@ -204,6 +216,7 @@ export default function App() {
                 <FormationPage
                   onSelectFormation={handleSelectFormation}
                   onSelectTerm={handleSelectTerm}
+                  onSelectCoverage={handleSelectCoverage}
                 />
               }
             />
@@ -213,6 +226,7 @@ export default function App() {
                 <CoveragePage
                   onSelectFormation={handleSelectFormation}
                   onSelectTerm={handleSelectTerm}
+                  onSelectCoverage={handleSelectCoverage}
                 />
               }
             />
@@ -222,6 +236,7 @@ export default function App() {
                 <TermPage
                   onSelectFormation={handleSelectFormation}
                   onSelectTerm={handleSelectTerm}
+                  onSelectCoverage={handleSelectCoverage}
                 />
               }
             />

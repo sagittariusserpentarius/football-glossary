@@ -5,6 +5,7 @@ import type {
   RenderedPlayer,
 } from "../../types/formations";
 import type { GlossaryTerm } from "../../types/glossary";
+import type { Coverage } from "../../types/coverages";
 import { createAutoLinkedText } from "../../lib/autoLink";
 import { LOS_X } from "../../lib/fieldConstants";
 import { assignStableSlots } from "../../lib/assignStableSlots";
@@ -38,11 +39,12 @@ interface FieldViewProps {
   formation: Formation;
   formations: Formation[];
   glossaryTerms: GlossaryTerm[];
-  /** id persisted in the `?vs=` search param (may be stale / wrong category) */
+  coverages: Coverage[];
   opponentId: string | null;
   onOpponentChange: (id: string | null) => void;
   onSelectFormation: (id: string) => void;
   onSelectTerm: (id: string) => void;
+  onSelectCoverage: (id: string) => void;
 }
 
 /* ------------------------------------------------------------------ */
@@ -53,10 +55,12 @@ export default function FieldView({
   formation,
   formations,
   glossaryTerms,
+  coverages,
   opponentId,
   onOpponentChange,
   onSelectFormation,
   onSelectTerm,
+  onSelectCoverage,
 }: FieldViewProps) {
   /* ---------- Opponent resolution ---------- */
   const oppCategory = oppositeCategory(formation.category);
@@ -132,11 +136,21 @@ export default function FieldView({
         formation.description,
         formations,
         glossaryTerms,
+        coverages,
         onSelectFormation,
         onSelectTerm,
+        onSelectCoverage,
         formation.id,
       ),
-    [formation, formations, glossaryTerms, onSelectFormation, onSelectTerm],
+    [
+      formation,
+      formations,
+      glossaryTerms,
+      coverages,
+      onSelectFormation,
+      onSelectTerm,
+      onSelectCoverage,
+    ],
   );
 
   /* ---------- Render ---------- */

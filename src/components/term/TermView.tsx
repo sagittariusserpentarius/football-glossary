@@ -1,5 +1,6 @@
 import type { GlossaryTerm } from "../../types/glossary";
 import type { Formation } from "../../types/formations";
+import type { Coverage } from "../../types/coverages";
 import { createAutoLinkedText } from "../../lib/autoLink";
 import ShareButton from "../ShareButton";
 
@@ -7,8 +8,10 @@ interface TermViewProps {
   term: GlossaryTerm;
   formations: Formation[];
   allTerms: GlossaryTerm[];
+  coverages: Coverage[];
   onSelectFormation: (id: string) => void;
   onSelectTerm: (id: string) => void;
+  onSelectCoverage: (id: string) => void;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -32,15 +35,19 @@ export default function TermView({
   term,
   formations,
   allTerms,
+  coverages,
   onSelectFormation,
   onSelectTerm,
+  onSelectCoverage,
 }: TermViewProps) {
   const linkedDefinition = createAutoLinkedText(
     term.definition,
     formations,
     allTerms,
+    coverages,
     onSelectFormation,
     onSelectTerm,
+    onSelectCoverage,
     term.id
   );
 

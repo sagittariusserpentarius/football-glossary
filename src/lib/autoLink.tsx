@@ -1,11 +1,14 @@
 import type { ReactNode } from "react";
 import type { Formation } from "../types/formations";
 import type { GlossaryTerm } from "../types/glossary";
+import type { Coverage } from "../types/coverages";
+
+type LinkableType = "formation" | "term" | "coverage";
 
 interface LinkableItem {
   id: string;
   displayName: string;
-  type: "formation" | "term";
+  type: LinkableType;
 }
 
 function escapeRegex(str: string): string {
@@ -13,28 +16,40 @@ function escapeRegex(str: string): string {
 }
 
 /**
- * Takes a text string and returns React nodes with clickable links
- * for any terms or formations that are defined in the glossary.
+ * Turn `text` into React nodes with clickable links for any formation,
+ * coverage, or glossary term whose canonical name appears verbatim.
  *
- * Only the first occurrence of each linkable item is turned into a
- * link — subsequent repeats render as plain text. This avoids
- * auto-linking "irrelevant" usages where the same word is used in
- * normal prose after already having been introduced.
+ * Matching rules (designed to avoid false positives on ordinary words):
+ *   - Case-SENSITIVE. Authors must write the term exactly as it appears
+ *     in the glossary for it to link. This prevents "pass", "flat",
+ *     "hook", "man", "zone", etc. from auto-linking when used as plain
+ *     English in prose.
+ *   - Word boundaries on both sides, so sub-word fragments never match.
+ *   - Longest-first alternation so "Cover 2" beats "Cover".
+ *   - Only the first occurrence of each item links; later repeats are
+ *     rendered as plain text.
+ *   - The page's own id (`currentId`) never self-links.
  */
 export function createAutoLinkedText(
   text: string,
   formations: Formation[],
   terms: GlossaryTerm[],
+  coverages: Coverage[],
   onSelectFormation: (id: string) => void,
   onSelectTerm: (id: string) => void,
+  onSelectCoverage: (id: string) => void,
   currentId?: string
 ): ReactNode {
-  // Build a list of all linkable items
   const linkables: LinkableItem[] = [
     ...formations.map((f) => ({
       id: f.id,
       displayName: f.name,
       type: "formation" as const,
+    })),
+    ...coverages.map((c) => ({
+      id: c.id,
+      displayName: c.name,
+      type: "coverage" as const,
     })),
     ...terms.map((t) => ({
       id: t.id,
@@ -43,40 +58,38 @@ export function createAutoLinkedText(
     })),
   ];
 
-  // Sort by length descending to match longer terms first (e.g., "pick-6" before "pick")
+  // Longer names first so e.g. "Cover 2" wins over "Cover".
   linkables.sort((a, b) => b.displayName.length - a.displayName.length);
 
   if (linkables.length === 0) return text;
 
-  // Create a regex pattern for all terms (case-insensitive, word boundaries)
   const pattern = linkables.map((l) => escapeRegex(l.displayName)).join("|");
+  // NOTE: case-sensitive on purpose — see function doc.
+  const regex = new RegExp(`\\b(?:${pattern})\\b`, "g");
 
-  // Use word boundaries to avoid matching partial words
-  const regex = new RegExp(`\\b(${pattern})\\b`, "gi");
+  // Fast lookup from matched text back to the LinkableItem.
+  const byDisplayName = new Map<string, LinkableItem>();
+  for (const l of linkables) {
+    if (!byDisplayName.has(l.displayName)) byDisplayName.set(l.displayName, l);
+  }
 
   const parts: ReactNode[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   let keyCounter = 0;
-
-  // Track which linkables have already been rendered as a link so we
-  // only link the first occurrence of each term in a given text block.
   const alreadyLinked = new Set<string>();
 
   while ((match = regex.exec(text)) !== null) {
-    // Add text before this match
     if (match.index > lastIndex) {
       parts.push(
-        <span key={`text-${keyCounter++}`}>
+        <span key={`t-${keyCounter++}`}>
           {text.slice(lastIndex, match.index)}
         </span>
       );
     }
 
     const matchedText = match[0];
-    const linkable = linkables.find(
-      (l) => l.displayName.toLowerCase() === matchedText.toLowerCase()
-    );
+    const linkable = byDisplayName.get(matchedText);
 
     const shouldLink =
       !!linkable &&
@@ -85,31 +98,28 @@ export function createAutoLinkedText(
 
     if (shouldLink && linkable) {
       alreadyLinked.add(linkable.id);
-      // Create a clickable link
       parts.push(
         <button
-          key={`link-${keyCounter++}`}
-          onClick={() =>
-            linkable.type === "formation"
-              ? onSelectFormation(linkable.id)
-              : onSelectTerm(linkable.id)
-          }
+          key={`l-${keyCounter++}`}
+          onClick={() => {
+            if (linkable.type === "formation") onSelectFormation(linkable.id);
+            else if (linkable.type === "coverage") onSelectCoverage(linkable.id);
+            else onSelectTerm(linkable.id);
+          }}
           className="text-emerald-600 hover:text-emerald-400 underline underline-offset-2 decoration-emerald-600/50 hover:decoration-emerald-400 transition-colors duration-150"
         >
           {matchedText}
         </button>
       );
     } else {
-      // It's the current term, not found, or an already-linked repeat — render plain.
-      parts.push(<span key={`text-${keyCounter++}`}>{matchedText}</span>);
+      parts.push(<span key={`t-${keyCounter++}`}>{matchedText}</span>);
     }
 
     lastIndex = match.index + matchedText.length;
   }
 
-  // Add remaining text after last match
   if (lastIndex < text.length) {
-    parts.push(<span key={`text-${keyCounter++}`}>{text.slice(lastIndex)}</span>);
+    parts.push(<span key={`t-${keyCounter++}`}>{text.slice(lastIndex)}</span>);
   }
 
   return parts.length > 0 ? parts : text;
