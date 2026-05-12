@@ -16,19 +16,62 @@ function escapeRegex(str: string): string {
 }
 
 /**
- * Turn `text` into React nodes with clickable links for any formation,
- * coverage, or glossary term whose canonical name appears verbatim.
+ * Single-word glossary names that are also ordinary English words.
+ * For these we require canonical-case match so prose like "rolls down
+ * the field" or "both the run and pass" doesn't auto-link.
  *
- * Matching rules (designed to avoid false positives on ordinary words):
- *   - Case-SENSITIVE. Authors must write the term exactly as it appears
- *     in the glossary for it to link. This prevents "pass", "flat",
- *     "hook", "man", "zone", etc. from auto-linking when used as plain
- *     English in prose.
- *   - Word boundaries on both sides, so sub-word fragments never match.
- *   - Longest-first alternation so "Cover 2" beats "Cover".
+ * Multi-word / hyphenated / digit-containing names bypass this check
+ * — they're structurally distinctive enough on their own.
+ */
+const AMBIGUOUS_COMMON_WORDS = new Set([
+  // Single-word terms currently in the glossary that are common English
+  "down",
+  "snap",
+  "sack",
+  "safety",
+  "fumble",
+  "blitz",
+  "audible",
+  // Words commonly added to football glossaries that overlap with English
+  "pass",
+  "run",
+  "block",
+  "rush",
+  "cover",
+  "zone",
+  "man",
+  "line",
+  "end",
+  "hook",
+  "flat",
+  "pick",
+  "route",
+  "trap",
+]);
+
+/** Has a space, hyphen, digit, or any non-letter — structurally distinctive. */
+function isDistinctive(name: string): boolean {
+  return /[^A-Za-z]/.test(name);
+}
+
+function requiresCanonicalCase(displayName: string): boolean {
+  if (isDistinctive(displayName)) return false;
+  return AMBIGUOUS_COMMON_WORDS.has(displayName.toLowerCase());
+}
+
+/**
+ * Turn `text` into React nodes, auto-linking any formation, coverage, or
+ * glossary term whose name appears.
+ *
+ * Matching rules:
+ *   - Word-boundary regex so sub-word fragments never match.
+ *   - Longest-first alternation, so "Cover 2" beats "Cover".
+ *   - Case-insensitive by default.
+ *   - Single-word terms that are also common English words must appear
+ *     in their canonical case (see AMBIGUOUS_COMMON_WORDS).
  *   - Only the first occurrence of each item links; later repeats are
- *     rendered as plain text.
- *   - The page's own id (`currentId`) never self-links.
+ *     rendered as plain text to keep descriptions readable.
+ *   - The page's own id never self-links.
  */
 export function createAutoLinkedText(
   text: string,
@@ -58,19 +101,19 @@ export function createAutoLinkedText(
     })),
   ];
 
-  // Longer names first so e.g. "Cover 2" wins over "Cover".
+  // Longer names first so "Cover 2" beats "Cover", "Pick-6" beats "Pick", etc.
   linkables.sort((a, b) => b.displayName.length - a.displayName.length);
-
   if (linkables.length === 0) return text;
 
   const pattern = linkables.map((l) => escapeRegex(l.displayName)).join("|");
-  // NOTE: case-sensitive on purpose — see function doc.
-  const regex = new RegExp(`\\b(?:${pattern})\\b`, "g");
+  const regex = new RegExp(`\\b(?:${pattern})\\b`, "gi");
 
-  // Fast lookup from matched text back to the LinkableItem.
-  const byDisplayName = new Map<string, LinkableItem>();
+  // Lookup by lowercase name; on collision keep the longest (sort ensures we
+  // see longer first, so we only set when absent).
+  const byLower = new Map<string, LinkableItem>();
   for (const l of linkables) {
-    if (!byDisplayName.has(l.displayName)) byDisplayName.set(l.displayName, l);
+    const k = l.displayName.toLowerCase();
+    if (!byLower.has(k)) byLower.set(k, l);
   }
 
   const parts: ReactNode[] = [];
@@ -89,10 +132,16 @@ export function createAutoLinkedText(
     }
 
     const matchedText = match[0];
-    const linkable = byDisplayName.get(matchedText);
+    const linkable = byLower.get(matchedText.toLowerCase());
+
+    const caseOk =
+      !!linkable &&
+      (!requiresCanonicalCase(linkable.displayName) ||
+        matchedText === linkable.displayName);
 
     const shouldLink =
       !!linkable &&
+      caseOk &&
       linkable.id !== currentId &&
       !alreadyLinked.has(linkable.id);
 
