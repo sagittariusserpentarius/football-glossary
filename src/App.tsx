@@ -19,6 +19,7 @@ import TermView from "./components/term/TermView";
 import WelcomeScreen from "./components/WelcomeScreen";
 import type { Selection } from "./types/glossary";
 import { cn } from "./lib/utils";
+import EmbedManager from './components/EmbedManager';
 
 /* ------------------------------------------------------------------ */
 /* Page wrappers                                                       */
@@ -174,6 +175,7 @@ export default function App() {
 
   return (
     <SettingsProvider>
+      <EmbedManager />
       <div className="flex h-screen w-full overflow-hidden bg-slate-100">
         <div
           className={cn(

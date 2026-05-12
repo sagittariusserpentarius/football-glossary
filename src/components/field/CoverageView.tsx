@@ -179,6 +179,7 @@ export default function CoverageView({
   return (
     <div className="flex flex-col h-full w-full">
       <div
+        id="coverage-container"
         className="relative flex-1 overflow-hidden rounded-xl mx-6 mt-4 mb-2 shadow-inner"
         style={{ background: "#2d5a27" }}
       >
@@ -208,7 +209,7 @@ export default function CoverageView({
 
       <Legend zoneKinds={zoneKinds} arrowKinds={arrowKinds} />
 
-      <div className="px-6 pt-2 pb-5">
+      <div className="coverage-description px-6 pt-2 pb-5">
         <div className="flex items-start justify-between gap-3">
           <h2 className="text-xl font-bold text-slate-800">{coverage.name}</h2>
           <ShareButton key={coverage.id} className="shrink-0 mt-0.5" />

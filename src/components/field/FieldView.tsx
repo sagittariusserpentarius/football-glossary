@@ -173,6 +173,7 @@ export default function FieldView({
 
       {/* Field */}
       <div
+        id="field-container"
         className={`relative flex-1 overflow-hidden rounded-xl mx-6 ${
           oppCategory ? "mt-1" : "mt-4"
         } mb-2 shadow-inner`}
@@ -198,7 +199,7 @@ export default function FieldView({
       </div>
 
       {/* Description */}
-      <div className="px-6 pt-2 pb-5">
+      <div className="field-description px-6 pt-2 pb-5">
         <div className="flex items-start justify-between gap-3">
           <h2 className="text-xl font-bold text-slate-800">
             {formation.name}
