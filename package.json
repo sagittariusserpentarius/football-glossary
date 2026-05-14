@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate:images": "tsx scripts/generateEmbedImages.ts",
+    "generate:images:local": "vite build && vite preview &  sleep 2 && npm run generate:images"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
@@ -33,7 +35,9 @@
     "typedoc": "^0.28.17",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vite": "npm:rolldown-vite@7.2.5"
+    "vite": "npm:rolldown-vite@7.2.5",
+    "puppeteer": "^22.0.0",
+    "tsx": "^4.0.0"
   },
   "overrides": {
     "vite": "npm:rolldown-vite@7.2.5"

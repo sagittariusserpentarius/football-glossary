@@ -1,0 +1,49 @@
+name: Generate Embed Images
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/data/**'
+      - 'src/components/field/**'
+      - 'src/lib/fieldConstants.ts'
+      - '.github/workflows/generate-embed-images.yml'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  generate-images:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build the project (needed for image generation)
+        run: npm run build
+      
+      - name: Generate embed images
+        run: npm run generate:images
+        env:
+          CI: true
+      
+      - name: Upload generated images as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: embed-images
+          path: public/embed-images/
+          retention-days: 90
+      
+      - name: Deploy to GitHub Pages (if needed)
+        # This step depends on your existing deployment setup
+        # For now, just ensure the images are available
+        run: echo "Images generated successfully"

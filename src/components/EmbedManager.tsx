@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { 
-  updateMetaTags, 
-  captureElementScreenshot,
+  updateMetaTags,
   getFormationDescription,
   getCoverageDescription,
   getTermDescription,
@@ -12,111 +11,133 @@ import { formations } from '../data/formations';
 import { coverages } from '../data/coverages';
 import { glossaryTerms } from '../data/terms';
 
+// Cache for manifest data
+let manifestCache: { 
+  formations: Record<string, string | null>; 
+  coverages: Record<string, string | null>; 
+} | null = null;
+
+async function loadManifest() {
+  if (manifestCache) return manifestCache;
+  
+  try {
+    const response = await fetch('/embed-images/manifest.json');
+    if (!response.ok) {
+      console.warn('Could not load embed images manifest');
+      return null;
+    }
+    const data = await response.json();
+    manifestCache = {
+      formations: data.formations || {},
+      coverages: data.coverages || {},
+    };
+    return manifestCache;
+  } catch (error) {
+    console.warn('Error loading embed images manifest:', error);
+    return null;
+  }
+}
+
+function getImageUrl(manifest: NonNullable<typeof manifestCache>, type: 'formation' | 'coverage', id: string): string | undefined {
+  const imageFilename = type === 'formation' 
+    ? manifest.formations[id] 
+    : manifest.coverages[id];
+  
+  if (imageFilename) {
+    return `/embed-images/${imageFilename}`;
+  }
+  return undefined;
+}
+
 /**
- * Manages Open Graph meta tags and screenshot generation for embeds.
- * Placed at the top level of the app to respond to route changes.
+ * Manages Open Graph meta tags for embeds.
+ * Uses pre-generated images from the /embed-images directory.
  */
 export default function EmbedManager() {
   const location = useLocation();
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [isCapturing, setIsCapturing] = useState(false);
 
   useEffect(() => {
-    // Parse the current route
-    const path = location.pathname;
-    const baseUrl = window.location.origin + window.location.pathname.replace(/\/$/, '');
-    
-    let metadata: PageMetadata | null = null;
-    let captureElementId: string | null = null;
-    let excludeSelectors: string[] = [];
-
-    if (path === '/') {
-      // Home page
-      metadata = {
-        title: 'Football Glossary',
-        description: 'A comprehensive glossary of football formations, coverages, and terminology.',
-        url: baseUrl,
-      };
-    } else if (path.startsWith('/formation/')) {
-      const id = path.replace('/formation/', '');
-      const formation = formations.find(f => f.id === id);
+    const updateTags = async () => {
+      const path = location.pathname;
+      const baseUrl = window.location.origin;
+      const fullUrl = baseUrl + location.pathname + location.search;
       
-      if (formation) {
+      let metadata: PageMetadata | null = null;
+
+      if (path === '/') {
         metadata = {
-          title: `${formation.name} - Football Glossary`,
-          description: getFormationDescription(formation.name, formation.category, formation.description),
-          url: baseUrl + location.search,
+          title: 'Football Glossary',
+          description: 'A comprehensive glossary of football formations, coverages, and terminology.',
+          url: fullUrl,
         };
+      } else if (path.startsWith('/formation/')) {
+        const id = path.replace('/formation/', '');
+        const formation = formations.find(f => f.id === id);
         
-        // Capture the field view, excluding the description text and share button
-        captureElementId = 'field-container';
-        excludeSelectors = ['.field-description', '.share-button-container'];
+        if (formation) {
+          metadata = {
+            title: `${formation.name} - Football Glossary`,
+            description: getFormationDescription(formation.name, formation.category, formation.description),
+            url: fullUrl,
+          };
+          
+          // Try to load pre-generated image
+          const manifest = await loadManifest();
+          if (manifest) {
+            const imageUrl = getImageUrl(manifest, 'formation', formation.id);
+            if (imageUrl) {
+              metadata.imageUrl = imageUrl;
+            }
+          }
+        }
+      } else if (path.startsWith('/coverage/')) {
+        const id = path.replace('/coverage/', '');
+        const coverage = coverages.find(c => c.id === id);
+        
+        if (coverage) {
+          metadata = {
+            title: `${coverage.name} - Football Glossary`,
+            description: getCoverageDescription(coverage.name, coverage.description),
+            url: fullUrl,
+          };
+          
+          // Try to load pre-generated image
+          const manifest = await loadManifest();
+          if (manifest) {
+            const imageUrl = getImageUrl(manifest, 'coverage', coverage.id);
+            if (imageUrl) {
+              metadata.imageUrl = imageUrl;
+            }
+          }
+        }
+      } else if (path.startsWith('/term/')) {
+        const id = path.replace('/term/', '');
+        const term = glossaryTerms.find(t => t.id === id);
+        
+        if (term) {
+          metadata = {
+            title: `${term.term} - Football Glossary`,
+            description: getTermDescription(term.term, term.definition),
+            url: fullUrl,
+            // No image for terms (accessibility)
+          };
+        }
       }
-    } else if (path.startsWith('/coverage/')) {
-      const id = path.replace('/coverage/', '');
-      const coverage = coverages.find(c => c.id === id);
-      
-      if (coverage) {
+
+      if (!metadata) {
         metadata = {
-          title: `${coverage.name} - Football Glossary`,
-          description: getCoverageDescription(coverage.name, coverage.description),
-          url: baseUrl,
+          title: 'Football Glossary',
+          description: 'A comprehensive glossary of football formations, coverages, and terminology.',
+          url: fullUrl,
         };
-        
-        // Capture the coverage view field, excluding description
-        captureElementId = 'coverage-container';
-        excludeSelectors = ['.coverage-description', '.share-button-container'];
       }
-    } else if (path.startsWith('/term/')) {
-      const id = path.replace('/term/', '');
-      const term = glossaryTerms.find(t => t.id === id);
-      
-      if (term) {
-        metadata = {
-          title: `${term.term} - Football Glossary`,
-          description: getTermDescription(term.term, term.definition),
-          url: baseUrl,
-        };
-        
-        // Terms don't need screenshots (accessibility concern with text in images)
-        // but we still update meta tags
-      }
-    }
 
-    if (!metadata) {
-      metadata = {
-        title: 'Football Glossary',
-        description: 'A comprehensive glossary of football formations, coverages, and terminology.',
-        url: window.location.href,
-      };
-    }
-
-    // Update meta tags immediately
-    updateMetaTags(metadata);
-
-    // Capture screenshot if needed (for formations and coverages)
-    if (captureElementId && !selectedImage) {
-      setIsCapturing(true);
-      captureElementScreenshot(captureElementId, excludeSelectors)
-        .then(imageUrl => {
-          setSelectedImage(imageUrl);
-          // Update meta tags with the image
-          updateMetaTags({ ...metadata!, imageUrl });
-        })
-        .catch(error => {
-          console.error('Failed to capture screenshot:', error);
-        })
-        .finally(() => {
-          setIsCapturing(false);
-        });
-    }
-
-    // Reset selected image when route changes
-    return () => {
-      setSelectedImage(null);
+      // Update meta tags
+      updateMetaTags(metadata);
     };
+
+    updateTags();
   }, [location.pathname, location.search]);
 
-  // This component doesn't render anything visible
   return null;
 }

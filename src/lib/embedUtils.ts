@@ -1,54 +1,8 @@
-import html2canvas from 'html2canvas';
-
 export interface PageMetadata {
   title: string;
   description: string;
   imageUrl?: string;
   url: string;
-}
-
-/**
- * Captures a screenshot of a specific element, excluding certain selectors.
- * Returns a data URL of the screenshot.
- */
-export async function captureElementScreenshot(
-  elementId: string,
-  excludeSelectors: string[] = []
-): Promise<string> {
-  const element = document.getElementById(elementId);
-  if (!element) {
-    throw new Error(`Element with id "${elementId}" not found`);
-  }
-
-  // Temporarily hide excluded elements
-  const hiddenElements: { el: HTMLElement; display: string }[] = [];
-  
-  for (const selector of excludeSelectors) {
-    const els = element.querySelectorAll(selector);
-    els.forEach((el) => {
-      if (el instanceof HTMLElement) {
-        hiddenElements.push({ el, display: el.style.display });
-        el.style.display = 'none';
-      }
-    });
-  }
-
-  try {
-    const canvas = await html2canvas(element, {
-      backgroundColor: '#2d5a27', // Match field background
-      scale: 2, // Higher resolution for better quality
-      useCORS: true,
-      allowTaint: true,
-    });
-    
-    const dataUrl = canvas.toDataURL('image/png', 0.85);
-    return dataUrl;
-  } finally {
-    // Restore hidden elements
-    hiddenElements.forEach(({ el, display }) => {
-      el.style.display = display;
-    });
-  }
 }
 
 /**
@@ -81,9 +35,14 @@ export function updateMetaTags(metadata: PageMetadata): void {
   setMeta('og:type', 'website', true);
   
   if (imageUrl) {
-    setMeta('og:image', imageUrl, true);
+    // Make image URL absolute if it's relative
+    const absoluteImageUrl = imageUrl.startsWith('http') 
+      ? imageUrl 
+      : window.location.origin + imageUrl;
+    
+    setMeta('og:image', absoluteImageUrl, true);
     setMeta('og:image:width', '1200', true);
-    setMeta('og:image:height', '630', true);
+    setMeta('og:image:height', '800', true);
   }
 
   // Twitter Card tags
@@ -92,10 +51,13 @@ export function updateMetaTags(metadata: PageMetadata): void {
   setMeta('twitter:description', description);
   
   if (imageUrl) {
-    setMeta('twitter:image', imageUrl);
+    const absoluteImageUrl = imageUrl.startsWith('http') 
+      ? imageUrl 
+      : window.location.origin + imageUrl;
+    setMeta('twitter:image', absoluteImageUrl);
   }
 
-  // Discord-specific (uses og: tags, but let's be explicit)
+  // Discord-specific (uses og: tags)
   setMeta('og:site_name', 'Football Glossary', true);
 }
 
