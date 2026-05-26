@@ -60,8 +60,10 @@ interface CoverageViewProps {
   coverage: Coverage;
   formations: Formation[];
   glossaryTerms: GlossaryTerm[];
+  coverages: Coverage[];
   onSelectFormation: (id: string) => void;
   onSelectTerm: (id: string) => void;
+  onSelectCoverage: (id: string) => void;
 }
 
 /* ------------------------------------------------------------------ */

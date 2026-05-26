@@ -3,9 +3,13 @@ export interface Point {
   y: number;
 }
 
+export type ZoneKind = "deep" | "hook" | "flat";
+export type ArrowKind = "man" | "blitz";
+
 /** A filled polygonal area of the field that a defender is responsible for. */
 export interface ZoneResponsibility {
   type: "zone";
+  kind: ZoneKind;
   /** Key of the defender this zone belongs to (for legend/attribution). */
   playerKey: string;
   /** Polygon vertices in coverage-view coordinates (0–1). */
@@ -29,6 +33,7 @@ export interface LineResponsibility {
 /** A solid arrow — e.g. man assignment, spy, or blitz path. */
 export interface ArrowResponsibility {
   type: "arrow";
+  kind: ArrowKind;
   playerKey: string;
   from?: Point;
   to: Point;
@@ -45,10 +50,11 @@ export interface Coverage {
   id: string;
   name: string;
   description: string;
-  /** A defensive formation that illustrates the coverage. Not deterministic — any
-   *  formation which properly displays the coverage can be used. */
+  /** A defensive formation that illustrates the coverage. */
   defensiveFormationId: string;
   /** An opposing offensive formation used to give the coverage context. */
   offensiveFormationId: string;
+  /** Optional per-player position overrides (defensive side). */
+  alignments?: Record<string, Point>;
   responsibilities: Responsibility[];
 }
