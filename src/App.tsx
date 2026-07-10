@@ -19,7 +19,7 @@ import TermView from "./components/term/TermView";
 import WelcomeScreen from "./components/WelcomeScreen";
 import type { Selection } from "./types/glossary";
 import { cn } from "./lib/utils";
-import EmbedManager from './components/EmbedManager';
+import EmbedManager from "./components/EmbedManager";
 
 /* ------------------------------------------------------------------ */
 /* Page wrappers                                                       */
@@ -148,7 +148,6 @@ export default function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const selection = useSelectionFromPath();
 
-  // Preserve the ?vs= opponent param when hopping between formations.
   const handleSelectFormation = useCallback(
     (id: string) => {
       const hash = window.location.hash.replace(/^#/, "");
@@ -162,7 +161,6 @@ export default function App() {
     [navigate],
   );
 
-  // Coverages and terms are simple navigations — no params to carry.
   const handleSelectCoverage = useCallback(
     (id: string) => navigate(`/coverage/${id}`),
     [navigate],
@@ -176,7 +174,7 @@ export default function App() {
   return (
     <SettingsProvider>
       <EmbedManager />
-      <div className="flex h-screen w-full overflow-hidden bg-slate-100">
+      <div className="flex h-screen w-full overflow-hidden bg-slate-100 dark:bg-slate-950 transition-colors duration-300">
         <div
           className={cn(
             "shrink-0 overflow-hidden",

@@ -15,10 +15,6 @@ import PlayerDot from "./PlayerDot";
 import ShareButton from "../ShareButton";
 import { FieldBackground } from "./FieldBackground";
 
-/* ------------------------------------------------------------------ */
-/* Constants                                                           */
-/* ------------------------------------------------------------------ */
-
 const OFFENSE_OPACITY = 0.55;
 
 const ZONE_STYLES: Record<ZoneKind, { color: string; label: string }> = {
@@ -52,10 +48,6 @@ const ARROW_STYLES: Record<ArrowKind, ArrowStyle> = {
   },
 };
 
-/* ------------------------------------------------------------------ */
-/* Props                                                               */
-/* ------------------------------------------------------------------ */
-
 interface CoverageViewProps {
   coverage: Coverage;
   formations: Formation[];
@@ -65,10 +57,6 @@ interface CoverageViewProps {
   onSelectTerm: (id: string) => void;
   onSelectCoverage: (id: string) => void;
 }
-
-/* ------------------------------------------------------------------ */
-/* Main component                                                      */
-/* ------------------------------------------------------------------ */
 
 export default function CoverageView({
   coverage,
@@ -86,7 +74,6 @@ export default function CoverageView({
     (f) => f.id === coverage.offensiveFormationId,
   );
 
-  /* ---------- Raw player positions ---------- */
   const rawDefenders: RenderedPlayer[] = useMemo(() => {
     if (!defensiveFormation) return [];
     const overrides = coverage.alignments ?? {};
@@ -105,7 +92,6 @@ export default function CoverageView({
     }));
   }, [offensiveFormation]);
 
-  /* ---------- Stable-slot assignment for smooth transitions ---------- */
   const prevDefRef = useRef<RenderedPlayer[] | null>(null);
   const prevOffRef = useRef<RenderedPlayer[] | null>(null);
 
@@ -125,7 +111,6 @@ export default function CoverageView({
     prevOffRef.current = offenders;
   }, [offenders]);
 
-  /* ---------- Player-position map for overlay ---------- */
   const playerPositions = useMemo(() => {
     const map = new Map<string, Point>();
     for (const p of offenders) map.set(p.key, { x: p.x, y: p.y });
@@ -133,7 +118,6 @@ export default function CoverageView({
     return map;
   }, [defenders, offenders]);
 
-  /* ---------- Legend items ---------- */
   const { zoneKinds, arrowKinds } = useMemo(() => {
     const zones = new Set<ZoneKind>();
     const arrows = new Set<ArrowKind>();
@@ -143,8 +127,6 @@ export default function CoverageView({
     }
     return { zoneKinds: zones, arrowKinds: arrows };
   }, [coverage.responsibilities]);
-
-  /* ---------- Auto-linked description ---------- */
 
   const linkedDescription = useMemo(
     () =>
@@ -171,7 +153,7 @@ export default function CoverageView({
 
   if (!defensiveFormation || !offensiveFormation) {
     return (
-      <div className="p-6 text-slate-500">
+      <div className="p-6 text-slate-500 dark:text-slate-400">
         Coverage &ldquo;{coverage.name}&rdquo; is missing a referenced
         formation.
       </div>
@@ -194,18 +176,10 @@ export default function CoverageView({
         />
 
         {offenders.map((p) => (
-          <PlayerDot
-            key={`off-${p.slot}`}
-            player={p}
-            category="offensive"
-          />
+          <PlayerDot key={`off-${p.slot}`} player={p} category="offensive" />
         ))}
         {defenders.map((p) => (
-          <PlayerDot
-            key={`def-${p.slot}`}
-            player={p}
-            category="defensive"
-          />
+          <PlayerDot key={`def-${p.slot}`} player={p} category="defensive" />
         ))}
       </div>
 
@@ -213,10 +187,12 @@ export default function CoverageView({
 
       <div className="coverage-description px-6 pt-2 pb-5">
         <div className="flex items-start justify-between gap-3">
-          <h2 className="text-xl font-bold text-slate-800">{coverage.name}</h2>
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+            {coverage.name}
+          </h2>
           <ShareButton key={coverage.id} className="shrink-0 mt-0.5" />
         </div>
-        <p className="text-slate-500 text-sm mt-1.5 leading-relaxed max-w-2xl">
+        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1.5 leading-relaxed max-w-2xl">
           {linkedDescription}
         </p>
       </div>
@@ -259,10 +235,10 @@ function CoverageOverlay({
 
   useEffect(() => {
     if (prevCoverageIdRef.current !== coverageId && svgRef.current) {
-      svgRef.current.animate(
-        [{ opacity: 0 }, { opacity: 1 }],
-        { duration: 300, easing: "ease-out" },
-      );
+      svgRef.current.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 300,
+        easing: "ease-out",
+      });
     }
     prevCoverageIdRef.current = coverageId;
   }, [coverageId]);
@@ -447,7 +423,7 @@ function Legend({ zoneKinds, arrowKinds }: LegendProps) {
   if (zoneKinds.size === 0 && arrowKinds.size === 0) return null;
 
   return (
-    <div className="mx-6 mb-1 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-600">
+    <div className="mx-6 mb-1 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-600 dark:text-slate-400">
       {Array.from(zoneKinds).map((kind) => {
         const { color, label } = ZONE_STYLES[kind];
         return (
@@ -470,7 +446,12 @@ function Legend({ zoneKinds, arrowKinds }: LegendProps) {
         const isBlitz = kind === "blitz";
         return (
           <div key={`a-${kind}`} className="flex items-center gap-1.5">
-            <svg width="26" height="12" viewBox="0 0 26 12" aria-hidden="true">
+            <svg
+              width="26"
+              height="12"
+              viewBox="0 0 26 12"
+              aria-hidden="true"
+            >
               <line
                 x1={0}
                 y1={6}

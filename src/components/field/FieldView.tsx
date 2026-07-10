@@ -13,16 +13,8 @@ import PlayerDot from "./PlayerDot";
 import ShareButton from "../ShareButton";
 import { FieldBackground } from "./FieldBackground";
 
-/* ------------------------------------------------------------------ */
-/* Constants                                                           */
-/* ------------------------------------------------------------------ */
-
 const OPPONENT_OPACITY = 0.4;
 
-/**
- * Map a formation category to the category that lines up on the other
- * side of the ball.  Special-teams has no natural opposite.
- */
 function oppositeCategory(
   cat: FormationCategory,
 ): "offensive" | "defensive" | null {
@@ -30,10 +22,6 @@ function oppositeCategory(
   if (cat === "defensive") return "offensive";
   return null;
 }
-
-/* ------------------------------------------------------------------ */
-/* Props                                                               */
-/* ------------------------------------------------------------------ */
 
 interface FieldViewProps {
   formation: Formation;
@@ -47,10 +35,6 @@ interface FieldViewProps {
   onSelectCoverage: (id: string) => void;
 }
 
-/* ------------------------------------------------------------------ */
-/* Main component                                                      */
-/* ------------------------------------------------------------------ */
-
 export default function FieldView({
   formation,
   formations,
@@ -62,34 +46,24 @@ export default function FieldView({
   onSelectTerm,
   onSelectCoverage,
 }: FieldViewProps) {
-  /* ---------- Opponent resolution ---------- */
   const oppCategory = oppositeCategory(formation.category);
   const opponentFormation = opponentId
     ? formations.find((f) => f.id === opponentId) ?? null
     : null;
-  // Only accept the opponent when it's from the right category.
   const validOpponent =
     opponentFormation?.category === oppCategory ? opponentFormation : null;
 
   const hasOpponent = validOpponent !== null;
   const primaryIsOffense = formation.category === "offensive";
 
-  /* ---------- Opponent option list ---------- */
   const opponentOptions = useMemo(
-    () => (oppCategory ? formations.filter((f) => f.category === oppCategory) : []),
+    () =>
+      oppCategory
+        ? formations.filter((f) => f.category === oppCategory)
+        : [],
     [formations, oppCategory],
   );
 
-  /* ---------- Raw player positions ----------
-   *
-   * Both formations are authored "facing right" (line on the high-x
-   * side, backfield / secondary on the low-x side).  To face them
-   * off across the LOS the *offensive* side is always mirrored —
-   * exactly the same convention CoverageView uses.
-   *
-   * When there is no opponent the primary formation keeps its
-   * authored positions so the standalone view looks unchanged.
-   */
   const rawPrimary: RenderedPlayer[] = useMemo(() => {
     const mirror = hasOpponent && primaryIsOffense;
     return formation.players.map((p) => ({
@@ -109,7 +83,6 @@ export default function FieldView({
     }));
   }, [validOpponent]);
 
-  /* ---------- Stable-slot assignment for smooth transitions ---------- */
   const prevPriRef = useRef<RenderedPlayer[] | null>(null);
   const prevOppRef = useRef<RenderedPlayer[] | null>(null);
 
@@ -129,7 +102,6 @@ export default function FieldView({
     prevOppRef.current = opponentPlayers;
   }, [opponentPlayers]);
 
-  /* ---------- Auto-linked description ---------- */
   const linkedDescription = useMemo(
     () =>
       createAutoLinkedText(
@@ -153,10 +125,8 @@ export default function FieldView({
     ],
   );
 
-  /* ---------- Render ---------- */
   return (
     <div className="flex flex-col h-full w-full">
-      {/* Opponent selector — hidden for special-teams formations */}
       {oppCategory && (
         <div
           className={`flex items-center px-6 pt-3 pb-1 ${
@@ -171,7 +141,6 @@ export default function FieldView({
         </div>
       )}
 
-      {/* Field */}
       <div
         id="field-container"
         className={`relative flex-1 overflow-hidden rounded-xl mx-6 ${
@@ -181,7 +150,6 @@ export default function FieldView({
       >
         <FieldBackground />
 
-        {/* Opponent dots rendered first so primary dots paint on top */}
         {opponentPlayers.map((p) => (
           <PlayerDot
             key={`opp-${p.slot}`}
@@ -198,15 +166,14 @@ export default function FieldView({
         ))}
       </div>
 
-      {/* Description */}
       <div className="field-description px-6 pt-2 pb-5">
         <div className="flex items-start justify-between gap-3">
-          <h2 className="text-xl font-bold text-slate-800">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
             {formation.name}
           </h2>
           <ShareButton key={formation.id} className="shrink-0 mt-0.5" />
         </div>
-        <p className="text-slate-500 text-sm mt-1.5 leading-relaxed max-w-2xl">
+        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1.5 leading-relaxed max-w-2xl">
           {linkedDescription}
         </p>
       </div>
@@ -231,15 +198,20 @@ function OpponentSelect({
 }: OpponentSelectProps) {
   return (
     <div className="flex items-center gap-2 min-w-0">
-      <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest whitespace-nowrap">
+      <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest whitespace-nowrap">
         Opponent
       </span>
       <select
         className={`
-          text-sm bg-white border rounded-lg px-2.5 py-1 text-slate-700 truncate
+          text-sm bg-white dark:bg-slate-800 border rounded-lg px-2.5 py-1
+          text-slate-700 dark:text-slate-200 truncate
           focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500
-          hover:border-slate-300 transition-colors cursor-pointer
-          ${selectedId ? "border-amber-400 ring-1 ring-amber-300/50" : "border-slate-200"}
+          hover:border-slate-300 dark:hover:border-slate-500 transition-colors cursor-pointer
+          ${
+            selectedId
+              ? "border-amber-400 ring-1 ring-amber-300/50 dark:border-amber-500 dark:ring-amber-500/30"
+              : "border-slate-200 dark:border-slate-600"
+          }
         `}
         value={selectedId ?? ""}
         onChange={(e) => onChange(e.target.value || null)}

@@ -3,14 +3,9 @@ import { Share2, Check } from "lucide-react";
 import { cn } from "../lib/utils";
 
 interface ShareButtonProps {
-  /** Extra classes applied to the outer button. */
   className?: string;
 }
 
-/**
- * Copies the current page URL (including hash) to the clipboard
- * and shows brief "Copied!" feedback.
- */
 export default function ShareButton({ className }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
 
@@ -19,7 +14,6 @@ export default function ShareButton({ className }: ShareButtonProps) {
     setCopied(true);
   }, []);
 
-  // Reset the "copied" state after a short delay
   useEffect(() => {
     if (!copied) return;
     const timer = setTimeout(() => setCopied(false), 2000);
@@ -33,9 +27,9 @@ export default function ShareButton({ className }: ShareButtonProps) {
       className={cn(
         "inline-flex items-center gap-1.5 text-sm font-medium rounded-lg px-3 py-1.5 transition-all duration-200",
         copied
-          ? "bg-emerald-100 text-emerald-700 border border-emerald-300"
-          : "bg-white text-slate-600 border border-slate-200 hover:border-slate-300 hover:text-slate-800 hover:shadow-sm",
-        className
+          ? "bg-emerald-100 text-emerald-700 border border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700"
+          : "bg-white text-slate-600 border border-slate-200 hover:border-slate-300 hover:text-slate-800 hover:shadow-sm dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 dark:hover:border-slate-500 dark:hover:text-slate-100",
+        className,
       )}
     >
       {copied ? (
